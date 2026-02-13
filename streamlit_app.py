@@ -17,7 +17,7 @@ from generate_dashboard import (
 
 # Page config
 st.set_page_config(
-    page_title="Bolig Dashboard Generator",
+    page_title="Underwriting Dashboard Generator",
     page_icon="🏠",
     layout="wide"
 )
@@ -114,7 +114,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("**Version:** 2.0")
-    st.markdown("**Udviklet med:** ❤️")
+    
 
 # Main content
 col1, col2 = st.columns(2)
@@ -270,7 +270,7 @@ st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #7f8c8d; padding: 2rem;'>
         <p><b>Bolig Dashboard Generator v2.0</b></p>
-        <p>Udviklet med Streamlit, Python, og ❤️</p>
+        <p>Udviklet med Streamlit og python</p>
         <p style='font-size: 0.8rem;'>📧 Spørgsmål? Kontakt IT support</p>
     </div>
 """, unsafe_allow_html=True)
