@@ -74,7 +74,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header
-st.title("🏠 Bolig Dashboard Generator")
+st.title("🏠 Underwriting Dashboard Generator")
 st.markdown("---")
 
 # Sidebar with instructions
