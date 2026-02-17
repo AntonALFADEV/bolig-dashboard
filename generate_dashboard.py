@@ -745,6 +745,8 @@ def generate_html(leje_data, ejer_data, output_path):
     <div class="mode-toggle">
         <button class="mode-btn active" onclick="switchMode('leje')">Lejeboliger</button>
         <button class="mode-btn" onclick="switchMode('ejer')">Ejerboliger</button>
+        <div style="width:1px; background:#ecf0f1; margin:6px 4px;"></div>
+        <button class="mode-btn" id="map-toggle-btn" style="color:#7f8c8d;">🛰️ Satellit</button>
     </div>
     
     <div id="map"></div>
@@ -1599,6 +1601,23 @@ def generate_html(leje_data, ejer_data, output_path):
         };
         
         L.control.layers(baseMaps, null, { position: 'bottomright', collapsed: false }).addTo(map);
+        
+        // Skjul Leaflet's eget layer control - vi bruger vores egen knap
+        document.querySelector('.leaflet-control-layers').style.display = 'none';
+        
+        // Sæt aktiv layer reference
+        var currentBaseLayer = osmLayer;
+        window._baseMaps = baseMaps;
+        window._currentBaseKey = '🗺️ Kort';
+        
+        document.getElementById('map-toggle-btn').addEventListener('click', function() {
+            var keys = Object.keys(window._baseMaps);
+            var nextKey = window._currentBaseKey === keys[0] ? keys[1] : keys[0];
+            map.removeLayer(window._baseMaps[window._currentBaseKey]);
+            map.addLayer(window._baseMaps[nextKey]);
+            window._currentBaseKey = nextKey;
+            this.textContent = nextKey === '🗺️ Kort' ? '🛰️ Satellit' : '🗺️ Kort';
+        });
         
         // Initialiser charts
         roomChart = new Chart(document.getElementById('roomChart'), {
