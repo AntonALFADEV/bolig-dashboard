@@ -429,7 +429,13 @@ def process_ejer_data(excel_path):
     df['By']         = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
     df['Handelsdato_str'] = pd.to_datetime(df['Handelsdato']).dt.strftime('%Y-%m-%d')
 
-    # Rens data FØRST - fjern rækker med manglende vigtige data
+    # Konverter typer sikkert
+    df['Antal Værelser'] = pd.to_numeric(df['Antal Værelser'], errors='coerce')
+    df['Enhedsareal']    = pd.to_numeric(df['Enhedsareal'],    errors='coerce')
+    df['Pris']           = pd.to_numeric(df['Pris'],           errors='coerce')
+    df['Pris pr. m2 (enhedsareal)'] = pd.to_numeric(df['Pris pr. m2 (enhedsareal)'], errors='coerce')
+
+    # Rens data - fjern rækker med manglende vigtige data
     original_count = len(df)
     required = ['Handelsnavn', 'By', 'lat', 'lng', 'Enhedsareal', 'Pris', 'Pris pr. m2 (enhedsareal)', 'Antal Værelser']
     df = df.dropna(subset=required)
@@ -437,7 +443,7 @@ def process_ejer_data(excel_path):
     if dropped > 0:
         print(f"   ⚠️  Fjernet {dropped} rækker med manglende data")
 
-    # Konverter typer
+    # Nu er det sikkert at konvertere til int
     df['Antal Værelser'] = df['Antal Værelser'].astype(int)
     df['Enhedsareal']    = df['Enhedsareal'].astype(int)
     df['Pris']           = df['Pris'].astype(int)
