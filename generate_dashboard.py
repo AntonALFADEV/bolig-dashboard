@@ -24,7 +24,36 @@ plt.rcParams['axes.unicode_minus'] = False
 # Note: Vi genererer stadig matplotlib grafer for de statiske thumbnails,
 # men bruger Plotly.js i browseren for interaktivitet
 
+def safe_int(val, default=None):
+    """Konverterer til int - håndterer '-', NaN, None og andre ugyldige værdier."""
+    if val is None:
+        return default
+    if isinstance(val, str) and val.strip() in ('-', '', 'nan', 'None', 'N/A', '#N/A'):
+        return default
+    try:
+        f = float(val)
+        if pd.isna(f):
+            return default
+        return int(f)
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(val, default=None):
+    """Konverterer til float - håndterer '-', NaN, None og andre ugyldige værdier."""
+    if val is None:
+        return default
+    if isinstance(val, str) and val.strip() in ('-', '', 'nan', 'None', 'N/A', '#N/A'):
+        return default
+    try:
+        f = float(val)
+        if pd.isna(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
+
 def parse_city_from_handelsnavn(handelsnavn):
+
     """Udtrækker by fra handelsnavn format: 'Adresse, Postnr By'"""
     if pd.isna(handelsnavn):
         return "Ukendt"
@@ -282,11 +311,17 @@ def create_summary_table(df, mode='leje'):
 def process_leje_data(excel_path):
     """Læser og behandler lejedata - hardcodede kolonnenavne"""
     try:
-        df = pd.read_excel(excel_path, sheet_name='Worksheet')
+        df = pd.read_excel(excel_path, sheet_name='Worksheet', na_values=['-'])
     except:
-        df = pd.read_excel(excel_path)
+        df = pd.read_excel(excel_path, na_values=['-'])
 
-    # Hardcodede kolonnenavne - disse skal matche dine Excel-filer
+    # Erstat '-' og lignende tomme værdier med NaN globalt
+    df = df.replace(['-', '', 'N/A', '#N/A', 'None', 'nan'], pd.NA)
+
+    # Tving alle numeriske kolonner til numeric - ugyldige værdier bliver NaN
+    for col in ['Areal', 'Leje/m2', 'Årsleje', 'Liggedage', 'Antal værelser', 'Opførelsesår', 'Lat', 'Lng']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     # Lejedata kolonner:
     # Adresse, By, Lat, Lng, Areal, Leje/m2, Årsleje, Liggedage, Antal værelser
     # Valgfrit: Opførelsesår, Boligtype
@@ -327,15 +362,15 @@ def process_leje_data(excel_path):
             'by': str(row['By']),
             'lat': float(row['Lat']),
             'lng': float(row['Lng']),
-            'areal': int(row['Areal']),
-            'leje_m2': int(row['Leje/m2']),
-            'leje_maned': int(row['Årsleje'] / 12),
-            'liggedage': int(row['Liggedage']),
-            'varelser': int(row['Antal værelser']),
-            'opfoerelsesaar': int(row['Opførelsesår']) if pd.notna(row['Opførelsesår']) else None,
-            'boligtype': str(row['Boligtype']) if pd.notna(row['Boligtype']) else 'Ikke angivet',
+            'areal': safe_int(row['Areal'], 0),
+            'leje_m2': safe_int(row['Leje/m2'], 0),
+            'leje_maned': safe_int(row['Årsleje'] / 12 if safe_float(row['Årsleje']) else 0, 0),
+            'liggedage': safe_int(row['Liggedage'], 0),
+            'varelser': safe_int(row['Antal værelser'], 0),
+            'opfoerelsesaar': safe_int(row['Opførelsesår']),
+            'boligtype': str(row['Boligtype']) if pd.notna(row['Boligtype']) and str(row['Boligtype']) not in ('-', 'None') else 'Ikke angivet',
             'dato': str(row['_dato_str']) if row['_dato_str'] is not None and pd.notna(row['_dato_str']) else None,
-            'dato_ts': int(row['_dato_ts']) if row['_dato_ts'] is not None and pd.notna(row['_dato_ts']) else None,
+            'dato_ts': safe_int(row['_dato_ts']),
         }
         boliger.append(bolig)
     
@@ -395,10 +430,14 @@ def process_ejer_data(excel_path):
     excel_file = pd.ExcelFile(excel_path)
 
     # Læs Stamdata
-    df = pd.read_excel(excel_path, sheet_name='Stamdata')
+    df = pd.read_excel(excel_path, sheet_name='Stamdata', na_values=['-'])
+
+    # Erstat '-' og lignende tomme værdier med NaN globalt
+    df = df.replace(['-', '', 'N/A', '#N/A', 'None', 'nan'], pd.NA)
 
     # Merge Enheder - find kolonner fleksibelt
-    df_enheder = pd.read_excel(excel_path, sheet_name='Enheder')
+    df_enheder = pd.read_excel(excel_path, sheet_name='Enheder', na_values=['-'])
+    df_enheder = df_enheder.replace(['-', '', 'N/A', '#N/A', 'None', 'nan'], pd.NA)
     
     # Find Antal værelser kolonnen (forskellig stavemåde)
     vaerelser_col = None
@@ -425,7 +464,7 @@ def process_ejer_data(excel_path):
 
     # Merge Ejendomme (valgfri)
     if 'Ejendomme' in excel_file.sheet_names:
-        df_ejendomme = pd.read_excel(excel_path, sheet_name='Ejendomme')
+        df_ejendomme = pd.read_excel(excel_path, sheet_name='Ejendomme', na_values=['-'])
         aar_col = next((c for c in df_ejendomme.columns if 'opf' in c.lower() or 'bygge' in c.lower() or 'år' in c.lower()), None)
         if aar_col:
             df = df.merge(df_ejendomme[['Handels-ID', aar_col]], on='Handels-ID', how='left')
@@ -442,11 +481,17 @@ def process_ejer_data(excel_path):
     df['Handelsdato_str'] = df['_dato'].dt.strftime('%Y-%m-%d')
     df['_dato_ts']   = df['_dato'].apply(lambda x: int(x.timestamp()) if pd.notna(x) else None)
 
-    # Konverter typer sikkert
+    # Konverter typer sikkert - errors='coerce' gør '-' og ugyldige værdier til NaN
     df['Antal Værelser'] = pd.to_numeric(df['Antal Værelser'], errors='coerce')
     df['Enhedsareal']    = pd.to_numeric(df['Enhedsareal'],    errors='coerce')
     df['Pris']           = pd.to_numeric(df['Pris'],           errors='coerce')
     df['Pris pr. m2 (enhedsareal)'] = pd.to_numeric(df['Pris pr. m2 (enhedsareal)'], errors='coerce')
+    if 'Opførelsesår' in df.columns:
+        df['Opførelsesår'] = pd.to_numeric(df['Opførelsesår'], errors='coerce')
+    if 'lat' in df.columns:
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+    if 'lng' in df.columns:
+        df['lng'] = pd.to_numeric(df['lng'], errors='coerce')
 
     # Rens data - fjern rækker med manglende vigtige data
     original_count = len(df)
@@ -478,14 +523,14 @@ def process_ejer_data(excel_path):
             'by': str(row['By']),
             'lat': float(row['lat']),
             'lng': float(row['lng']),
-            'areal': int(row['Enhedsareal']),
-            'pris': int(row['Pris']),
-            'pris_m2': int(row['Pris pr. m2 (enhedsareal)']),
-            'varelser': int(row['Antal Værelser']),
+            'areal': safe_int(row['Enhedsareal'], 0),
+            'pris': safe_int(row['Pris'], 0),
+            'pris_m2': safe_int(row['Pris pr. m2 (enhedsareal)'], 0),
+            'varelser': safe_int(row['Antal Værelser'], 0),
             'handelsdato': str(row['Handelsdato_str']),
-            'dato_ts': int(row['_dato_ts']) if pd.notna(row['_dato_ts']) else None,
-            'anvendelse': str(row['Anvendelse']) if pd.notna(row['Anvendelse']) else 'Ikke angivet',
-            'opfoerelsesaar': int(row['Opførelsesår']) if pd.notna(row['Opførelsesår']) else None
+            'dato_ts': safe_int(row['_dato_ts']),
+            'anvendelse': str(row['Anvendelse']) if pd.notna(row['Anvendelse']) and str(row['Anvendelse']) not in ('-', 'None') else 'Ikke angivet',
+            'opfoerelsesaar': safe_int(row['Opførelsesår'])
         }
         boliger.append(bolig)
     
