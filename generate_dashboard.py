@@ -1326,6 +1326,10 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function createTable(filtered) {
             var mode = currentMode;
+
+            // Hent turnkey parametre FØR loopen der bruger dem
+            var tkOpex = parseFloat(document.getElementById('tk-opex').value) || 0;
+            var tkYld  = parseFloat(document.getElementById('tk-yield').value) || 4;
             
             // Kategoriser og aggreger
             var categorized = {};
@@ -1357,8 +1361,11 @@ def generate_html(leje_data, ejer_data, output_path):
                 cat.pris_total_sum += (mode === 'leje' ? b.leje_maned : b.pris);
                 cat.varelser_sum += b.varelser;
                 if (mode === 'leje') {
-                    cat.liggedage_sum += b.liggedage;
-                    cat.turnkey_sum += calcTurnkey(b.leje_m2, tkOpex, tkYld);
+                    cat.liggedage_sum += b.liggedage || 0;
+                    if (b.leje_m2 && b.leje_m2 > 0) {
+                        cat.turnkey_sum += calcTurnkey(b.leje_m2, tkOpex, tkYld);
+                        cat.turnkey_count = (cat.turnkey_count || 0) + 1;
+                    }
                 }
             });
             
@@ -1375,10 +1382,6 @@ def generate_html(leje_data, ejer_data, output_path):
                 html += '<th style="padding: 12px; border: 1px solid #ddd; background:#1e40af; color:#93c5fd;">Turnkey pr. m²</th>';
             }
             html += '</tr>';
-
-            // Hent turnkey parametre
-            var tkOpex = parseFloat(document.getElementById('tk-opex').value) || 0;
-            var tkYld  = parseFloat(document.getElementById('tk-yield').value) || 4;
             
             var categories = ['0-50 m²', '50-75 m²', '75-100 m²', '100-115 m²', '115-130 m²', '130+ m²'];
             var rowIndex = 0;
@@ -1395,7 +1398,9 @@ def generate_html(leje_data, ejer_data, output_path):
                     html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + (data.varelser_sum / data.count).toFixed(1) + '</td>';
                     if (mode === 'leje') {
                         html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + Math.round(data.liggedage_sum / data.count) + '</td>';
-                        html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#eff6ff; color:#1d4ed8; font-weight:600;">' + Math.round(data.turnkey_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
+                        var tkCount = data.turnkey_count || 0;
+                        var tkVal = tkCount > 0 ? Math.round(data.turnkey_sum / tkCount).toLocaleString('da-DK') + ' kr.' : '-';
+                        html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#eff6ff; color:#1d4ed8; font-weight:600;">' + tkVal + '</td>';
                     }
                     html += '</tr>';
                     rowIndex++;
@@ -1413,12 +1418,15 @@ def generate_html(leje_data, ejer_data, output_path):
             html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgPrisTotal.toLocaleString('da-DK') + ' kr.</td>';
             html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgVarelser + '</td>';
             if (mode === 'leje') {
-                var avgLiggedage = Math.round(filtered.reduce((s, b) => s + b.liggedage, 0) / filtered.length);
+                var validForLiggedage = filtered.filter(b => b.liggedage);
+                var avgLiggedage = validForLiggedage.length > 0 ? Math.round(validForLiggedage.reduce((s, b) => s + b.liggedage, 0) / validForLiggedage.length) : '-';
                 html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgLiggedage + '</td>';
-                var avgTurnkey = Math.round(filtered.reduce((s, b) => s + calcTurnkey(b.leje_m2, tkOpex, tkYld), 0) / filtered.length);
-                html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#1e40af; color:#93c5fd;">' + avgTurnkey.toLocaleString('da-DK') + ' kr.</td>';
+                var validForTk = filtered.filter(b => b.leje_m2 && b.leje_m2 > 0);
+                var avgTurnkey = validForTk.length > 0 ? Math.round(validForTk.reduce((s, b) => s + calcTurnkey(b.leje_m2, tkOpex, tkYld), 0) / validForTk.length) : null;
+                var avgTkDisplay = avgTurnkey !== null ? avgTurnkey.toLocaleString('da-DK') + ' kr.' : '-';
+                html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#1e40af; color:#93c5fd;">' + avgTkDisplay + '</td>';
                 // Opdater KPI
-                document.getElementById('tk-kpi').textContent = avgTurnkey.toLocaleString('da-DK');
+                if (avgTurnkey !== null) document.getElementById('tk-kpi').textContent = avgTurnkey.toLocaleString('da-DK');
             }
             html += '</tr>';
             
