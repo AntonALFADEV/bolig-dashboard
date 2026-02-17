@@ -627,57 +627,143 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         
         .filter-group {
-            margin-bottom: 8px;
+            margin-bottom: 14px;
         }
         
         .filter-label {
-            font-size: 10px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 7px;
+            display: block;
         }
         
         .filter-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
+            gap: 5px;
         }
         
         .filter-btn {
-            background: #ecf0f1;
-            border: 1px solid #bdc3c7;
-            padding: 4px 8px;
-            font-size: 10px;
-            border-radius: 3px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8;
+            padding: 4px 11px;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.18s ease;
         }
         
         .filter-btn:hover {
-            background: #bdc3c7;
+            background: rgba(255,255,255,0.13);
+            color: #e2e8f0;
+            border-color: rgba(255,255,255,0.25);
         }
         
         .filter-btn.active {
-            background: #3498db;
+            background: #3b82f6;
             color: white;
-            border-color: #2980b9;
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59,130,246,0.4);
         }
         
         .reset-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px;
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.4);
+            padding: 7px;
             font-size: 10px;
-            border-radius: 3px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
-            margin-top: 8px;
-            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.18s ease;
         }
         
         .reset-btn:hover {
-            background: #c0392b;
+            background: rgba(239,68,68,0.12);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* Filter panel baggrund */
+        #filter-panel {
+            background: #1e293b !important;
+            border-right: 1px solid rgba(255,255,255,0.08) !important;
+        }
+        
+        /* Overlay filter panel */
+        .overlay-filters {
+            background: #1e293b !important;
+            border-right: 1px solid rgba(255,255,255,0.08) !important;
+        }
+        .overlay-filters .filter-label { 
+            font-size: 9px; letter-spacing: 0.12em; color: #94a3b8; 
+            margin-bottom: 7px; font-weight: 700; text-transform: uppercase; 
+        }
+        .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
+        .overlay-filters .filter-btn {
+            background: rgba(255,255,255,0.07); color: #94a3b8; 
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 4px 11px; border-radius: 20px; font-size: 11px; cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .overlay-filters .filter-btn.active { 
+            background: #3b82f6; color: white; border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59,130,246,0.4);
+        }
+        .overlay-filters .reset-btn {
+            width: 100%; background: transparent; color: #ef4444; 
+            border: 1px solid rgba(239,68,68,0.4);
+            padding: 7px; border-radius: 8px; cursor: pointer; 
+            font-size: 10px; font-weight: 700; letter-spacing: 0.08em; margin-top: 10px;
+            transition: all 0.18s ease;
+        }
+        .overlay-filters .reset-btn:hover {
+            background: rgba(239,68,68,0.12); border-color: #ef4444;
+        }
+
+        /* Slider panels */
+        #sliders-wrapper > div {
+            background: #1e293b !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+        }
+
+        /* Custom range input styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(59,130,246,0.6);
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 16px; height: 16px;
+            background: #3b82f6; border-radius: 50%;
+            cursor: pointer; border: none;
+            box-shadow: 0 0 8px rgba(59,130,246,0.6);
         }
         
         .thumbnails {
@@ -816,39 +902,39 @@ def generate_html(leje_data, ejer_data, output_path):
     
     <!-- Year Range Slider -->
     <div id="sliders-wrapper" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; flex-direction: column; gap: 10px; align-items: center;">
-    <div id="dato-slider-container" style="display: none; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 400px;">
-        <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
+    <div id="dato-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
+        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
             📅 <span id="dato-slider-label">DATO</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <div style="flex: 1;">
-                <input type="range" id="dato-slider-min" style="width: 100%; margin: 4px 0;">
-                <input type="range" id="dato-slider-max" style="width: 100%; margin: 4px 0;">
+                <input type="range" id="dato-slider-min" style="width: 100%; margin: 6px 0;">
+                <input type="range" id="dato-slider-max" style="width: 100%; margin: 6px 0;">
             </div>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">
-            <span>Fra: <span id="dato-value-min">-</span></span>
-            <span>Til: <span id="dato-value-max">-</span></span>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; font-weight: 600; color: #e2e8f0;">
+            <span style="color:#94a3b8; font-size:10px;">Fra: </span><span id="dato-value-min" style="color:#3b82f6;">-</span>
+            <span style="color:#94a3b8; font-size:10px;">Til: </span><span id="dato-value-max" style="color:#3b82f6;">-</span>
         </div>
     </div>
-    <div id="year-slider-container" style="display: none; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 400px;">
-        <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
+    <div id="year-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
+        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
             🏗️ OPFØRELSESÅR
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span id="year-min" style="font-size: 11px; color: #7f8c8d; min-width: 40px;">2000</span>
+            <span id="year-min" style="font-size: 11px; color: #64748b; min-width: 40px;">2000</span>
             <div style="flex: 1; position: relative;">
-                <input type="range" id="year-slider-min" style="width: 100%; position: absolute; pointer-events: none; -webkit-appearance: none; height: 8px; background: transparent;">
-                <input type="range" id="year-slider-max" style="width: 100%; position: absolute; pointer-events: none; -webkit-appearance: none; height: 8px; background: transparent;">
-                <div style="height: 8px; background: #ecf0f1; border-radius: 4px; position: relative; margin: 8px 0;">
-                    <div id="year-range-fill" style="position: absolute; height: 100%; background: #3498db; border-radius: 4px;"></div>
+                <input type="range" id="year-slider-min" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
+                <input type="range" id="year-slider-max" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
+                <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; margin: 8px 0;">
+                    <div id="year-range-fill" style="position: absolute; height: 100%; background: #3b82f6; border-radius: 2px;"></div>
                 </div>
             </div>
-            <span id="year-max" style="font-size: 11px; color: #7f8c8d; min-width: 40px; text-align: right;">2025</span>
+            <span id="year-max" style="font-size: 11px; color: #64748b; min-width: 40px; text-align: right;">2025</span>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; font-weight: bold; color: #2c3e50;">
-            <span>Fra: <span id="year-value-min">2000</span></span>
-            <span>Til: <span id="year-value-max">2025</span></span>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; font-weight: 600;">
+            <span><span style="color:#94a3b8; font-size:10px;">Fra: </span><span id="year-value-min" style="color:#3b82f6;">2000</span></span>
+            <span><span style="color:#94a3b8; font-size:10px;">Til: </span><span id="year-value-max" style="color:#3b82f6;">2025</span></span>
         </div>
     </div>
     </div>
