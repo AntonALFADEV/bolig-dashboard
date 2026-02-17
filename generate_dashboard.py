@@ -593,11 +593,11 @@ def generate_html(leje_data, ejer_data, output_path):
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --bg-panel:     rgba(255,255,255,0.20);
-            --bg-panel-2:   rgba(255,255,255,0.13);
-            --bg-panel-3:   rgba(0,0,0,0.08);
-            --border:       rgba(0,0,0,0.09);
-            --border-hi:    rgba(0,0,0,0.17);
+            --bg-panel:     rgba(255,255,255,0.10);
+            --bg-panel-2:   rgba(255,255,255,0.10);
+            --bg-panel-3:   rgba(255,255,255,0.10);
+            --border:       rgba(0,0,0,0.12);
+            --border-hi:    rgba(0,0,0,0.20);
             --text-primary: #1a1d23;
             --text-secondary: #4b5563;
             --text-muted:   #8b95a3;
@@ -875,28 +875,29 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .overlay-filters .filter-group { margin-bottom: 14px; }
         .overlay-filters .filter-label {
-            font-size: 9px; letter-spacing: 0.12em; color: var(--text-muted);
+            font-size: 9px; letter-spacing: 0.12em; color: rgba(255,255,255,0.7);
             margin-bottom: 7px; font-weight: 700; text-transform: uppercase;
         }
         .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
         .overlay-filters .filter-btn {
-            background: var(--bg-panel-2); color: var(--text-secondary);
-            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.25);
             padding: 4px 11px; border-radius: 6px; font-size: 11px;
             font-family: inherit; cursor: pointer; transition: all 0.15s ease;
         }
+        .overlay-filters .filter-btn:hover { background: rgba(255,255,255,0.25); }
         .overlay-filters .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .overlay-filters .reset-btn {
-            width: 100%; background: transparent; color: var(--danger);
-            border: 1px solid rgba(239,68,68,0.3);
+            width: 100%; background: transparent; color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.3);
             padding: 7px; border-radius: 6px; cursor: pointer;
             font-size: 10px; font-weight: 600; font-family: inherit;
             letter-spacing: 0.06em; text-transform: uppercase; margin-top: 10px;
             transition: all 0.15s ease;
         }
-        .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
-        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: rgba(0,0,0,0.15); min-height: 0; }
-        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.20); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
+        .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.25); border-color: var(--danger); color: white; }
+        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: transparent; min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -988,35 +989,37 @@ def generate_html(leje_data, ejer_data, output_path):
         .analysis-table {
             width: 100%; border-collapse: collapse;
             font-family: 'Inter', sans-serif; font-size: 12px;
+            background: rgba(255,255,255,0.88);
+            border-radius: 6px; overflow: hidden;
         }
         .analysis-table th {
-            background: var(--bg-panel-2); color: var(--text-secondary);
+            background: rgba(0,0,0,0.06); color: #374151;
             font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
             text-transform: uppercase; padding: 11px 14px;
-            border-bottom: 1px solid var(--border-hi); text-align: center;
+            border-bottom: 1px solid rgba(0,0,0,0.10); text-align: center;
         }
         .analysis-table th.tk-col {
-            background: var(--accent); color: rgba(255,255,255,0.9);
+            background: var(--accent); color: white;
         }
         .analysis-table td {
             padding: 10px 14px; text-align: center;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            color: #1a1d23;
         }
         .analysis-table tr:last-child td { border-bottom: none; }
         .analysis-table tr.row-even td { background: rgba(0,0,0,0.02); }
-        .analysis-table tr.row-odd  td { background: rgba(0,0,0,0.01); }
+        .analysis-table tr.row-odd  td { background: transparent; }
         .analysis-table tr.total-row td {
-            background: var(--bg-panel-2); font-weight: 700;
-            color: var(--text-primary); border-top: 1px solid var(--border-hi);
+            background: rgba(0,0,0,0.05); font-weight: 700;
+            color: #1a1d23; border-top: 1px solid rgba(0,0,0,0.12);
         }
         .analysis-table td.tk-cell {
             color: var(--accent); font-weight: 600;
-            background: rgba(59,130,246,0.06) !important;
+            background: rgba(59,130,246,0.08) !important;
         }
         .analysis-table td.tk-cell-total {
-            color: #93c5fd; font-weight: 700;
-            background: rgba(59,130,246,0.15) !important;
+            color: #1d4ed8; font-weight: 700;
+            background: rgba(59,130,246,0.12) !important;
         }
     </style>
 </head>
@@ -2007,10 +2010,10 @@ def generate_html(leje_data, ejer_data, output_path):
             window._ovTyper = typer;
             
             var btnActive   = 'background:#3b82f6;color:white;border:1px solid #3b82f6;';
-            var btnInactive = 'background:#e4e7ec;color:#4b5563;border:1px solid rgba(0,0,0,0.08);';
+            var btnInactive = 'background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.25);';
             var btnBase     = 'padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;';
-            var labelStyle  = 'font-size:9px;color:#556070;margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
-            var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#556070;margin-bottom:15px;">Filtre</div>';
+            var labelStyle  = 'font-size:9px;color:rgba(255,255,255,0.65);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
+            var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:15px;">Filtre</div>';
 
             // Vaerelser
             html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Vaerelser</span><div style="display:flex;flex-wrap:wrap;gap:5px;">';
@@ -2046,14 +2049,14 @@ def generate_html(leje_data, ejer_data, output_path):
                 var curMin  = selectedFilters.aarMin !== null ? selectedFilters.aarMin : minYear;
                 var curMax  = selectedFilters.aarMax !== null ? selectedFilters.aarMax : maxYear;
                 html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Opf. år</span>';
-                html += '<div style="font-size:11px;margin-bottom:2px;color:var(--text-secondary);">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:rgba(255,255,255,0.7);">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMin + '" style="width:100%;margin:2px 0;" oninput="ovYearMin(this.value,' + num + ')">';
-                html += '<div style="font-size:11px;margin-bottom:2px;color:var(--text-secondary);">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:rgba(255,255,255,0.7);">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMax + '" style="width:100%;margin:2px 0;" oninput="ovYearMax(this.value,' + num + ')">';
                 html += '</div>';
             }
             
-            html += '<button style="width:100%;background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.35);padding:7px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;" onclick="ovReset(' + num + ')">Nulstil filtre</button>';
+            html += '<button style="width:100%;background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);padding:7px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;" onclick="ovReset(' + num + ')">Nulstil filtre</button>';
             
             container.innerHTML = html;
         }
