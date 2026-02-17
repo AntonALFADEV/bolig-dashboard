@@ -294,6 +294,15 @@ def process_leje_data(excel_path):
     df['Opførelsesår'] = df['Opførelsesår'] if 'Opførelsesår' in df.columns else None
     df['Boligtype']    = df['Boligtype']    if 'Boligtype'    in df.columns else 'Ikke angivet'
     df['Leje/måned']   = df['Årsleje'] / 12
+
+    # Parse dato
+    if 'Dato' in df.columns:
+        df['_dato'] = pd.to_datetime(df['Dato'], dayfirst=True, errors='coerce')
+        df['_dato_str'] = df['_dato'].dt.strftime('%Y-%m-%d')
+        df['_dato_ts']  = df['_dato'].astype('int64') // 10**9  # Unix timestamp i sekunder
+    else:
+        df['_dato_str'] = None
+        df['_dato_ts']  = None
     
     # Generer grafer
     print("   Genererer scatter plot...")
@@ -324,7 +333,9 @@ def process_leje_data(excel_path):
             'liggedage': int(row['Liggedage']),
             'varelser': int(row['Antal værelser']),
             'opfoerelsesaar': int(row['Opførelsesår']) if pd.notna(row['Opførelsesår']) else None,
-            'boligtype': str(row['Boligtype']) if pd.notna(row['Boligtype']) else 'Ikke angivet'
+            'boligtype': str(row['Boligtype']) if pd.notna(row['Boligtype']) else 'Ikke angivet',
+            'dato': str(row['_dato_str']) if row['_dato_str'] is not None and pd.notna(row['_dato_str']) else None,
+            'dato_ts': int(row['_dato_ts']) if row['_dato_ts'] is not None and pd.notna(row['_dato_ts']) else None,
         }
         boliger.append(bolig)
     
@@ -427,7 +438,9 @@ def process_ejer_data(excel_path):
 
     df['Anvendelse'] = df['Anvendelse'] if 'Anvendelse' in df.columns else 'Ikke angivet'
     df['By']         = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
-    df['Handelsdato_str'] = pd.to_datetime(df['Handelsdato']).dt.strftime('%Y-%m-%d')
+    df['_dato']      = pd.to_datetime(df['Handelsdato'], errors='coerce')
+    df['Handelsdato_str'] = df['_dato'].dt.strftime('%Y-%m-%d')
+    df['_dato_ts']   = df['_dato'].astype('int64') // 10**9
 
     # Konverter typer sikkert
     df['Antal Værelser'] = pd.to_numeric(df['Antal Værelser'], errors='coerce')
@@ -470,6 +483,7 @@ def process_ejer_data(excel_path):
             'pris_m2': int(row['Pris pr. m2 (enhedsareal)']),
             'varelser': int(row['Antal Værelser']),
             'handelsdato': str(row['Handelsdato_str']),
+            'dato_ts': int(row['_dato_ts']) if pd.notna(row['_dato_ts']) else None,
             'anvendelse': str(row['Anvendelse']) if pd.notna(row['Anvendelse']) else 'Ikke angivet',
             'opfoerelsesaar': int(row['Opførelsesår']) if pd.notna(row['Opførelsesår']) else None
         }
@@ -821,6 +835,22 @@ def generate_html(leje_data, ejer_data, output_path):
             <span>Til: <span id="year-value-max">2025</span></span>
         </div>
     </div>
+
+    <div id="dato-slider-container" style="display: none; position: fixed; bottom: 20px; left: calc(50% + 420px); transform: translateX(-50%); z-index: 1000; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 340px;">
+        <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
+            📅 <span id="dato-slider-label">DATO</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="flex: 1;">
+                <input type="range" id="dato-slider-min" style="width: 100%; margin: 4px 0;">
+                <input type="range" id="dato-slider-max" style="width: 100%; margin: 4px 0;">
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">
+            <span>Fra: <span id="dato-value-min">-</span></span>
+            <span>Til: <span id="dato-value-max">-</span></span>
+        </div>
+    </div>
     
     <!-- Thumbnails -->
     <div class="thumbnails">
@@ -889,6 +919,8 @@ def generate_html(leje_data, ejer_data, output_path):
             by: [],
             aarMin: null,
             aarMax: null,
+            datoMin: null,
+            datoMax: null,
             type: []
         };
         
@@ -1130,20 +1162,7 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         
         function updateInteractiveCharts() {
-            var filtered = allBoliger.filter(function(bolig) {
-                var varelserMatch = selectedFilters.varelser.length === 0 || 
-                                   selectedFilters.varelser.includes(bolig.varelser);
-                var byMatch = selectedFilters.by.length === 0 || 
-                             selectedFilters.by.includes(bolig.by);
-                var aarMatch = bolig.opfoerelsesaar === null || 
-                              (selectedFilters.aarMin === null || bolig.opfoerelsesaar >= selectedFilters.aarMin) &&
-                              (selectedFilters.aarMax === null || bolig.opfoerelsesaar <= selectedFilters.aarMax);
-                var typeValue = currentMode === 'leje' ? bolig.boligtype : bolig.anvendelse;
-                var typeMatch = selectedFilters.type.length === 0 || selectedFilters.type.includes(typeValue);
-                
-                return varelserMatch && byMatch && aarMatch && typeMatch;
-            });
-            
+            var filtered = applyFilters(allBoliger);
             createScatterPlot(filtered);
             createHeatmap(filtered);
             createTable(filtered);
@@ -1179,16 +1198,25 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function initializeFilters(data) {
             var vaerelser = [...new Set(data.boliger.map(b => b.varelser))].sort((a,b) => a-b);
-            selectedFilters.varelser = vaerelser;  // Alle aktive som standard
+            selectedFilters.varelser = vaerelser;
             var byer = [...new Set(data.boliger.map(b => b.by))].sort();
-            selectedFilters.by = byer;  // Alle aktive som standard
+            selectedFilters.by = byer;
             var aar = [...new Set(data.boliger.map(b => b.opfoerelsesaar).filter(y => y !== null))].sort((a,b) => a-b);
             if (aar.length > 0) {
                 selectedFilters.aarMin = Math.min(...aar);
                 selectedFilters.aarMax = Math.max(...aar);
             }
             var typer = [...new Set(data.boliger.map(b => currentMode === 'leje' ? b.boligtype : b.anvendelse))].sort();
-            selectedFilters.type = typer;  // Alle aktive som standard
+            selectedFilters.type = typer;
+            // Dato filter
+            var datoer = data.boliger.map(b => b.dato_ts).filter(d => d !== null && d !== undefined);
+            if (datoer.length > 0) {
+                selectedFilters.datoMin = Math.min(...datoer);
+                selectedFilters.datoMax = Math.max(...datoer);
+            } else {
+                selectedFilters.datoMin = null;
+                selectedFilters.datoMax = null;
+            }
         }
         
         function updateKPIContent() {
@@ -1312,6 +1340,33 @@ def generate_html(leje_data, ejer_data, output_path):
             } else {
                 document.getElementById('year-slider-container').style.display = 'none';
             }
+
+            // Opdater dato-slider
+            var datoer = data.boliger.map(b => b.dato_ts).filter(d => d !== null && d !== undefined);
+            if (datoer.length > 0) {
+                var minTs = Math.min(...datoer);
+                var maxTs = Math.max(...datoer);
+                selectedFilters.datoMin = selectedFilters.datoMin !== null ? selectedFilters.datoMin : minTs;
+                selectedFilters.datoMax = selectedFilters.datoMax !== null ? selectedFilters.datoMax : maxTs;
+
+                function tsToLabel(ts) {
+                    var d = new Date(ts * 1000);
+                    return d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
+                }
+
+                document.getElementById('dato-slider-container').style.display = 'block';
+                document.getElementById('dato-slider-label').textContent = currentMode === 'leje' ? 'UDLEJNINGSDATO' : 'HANDELSDATO';
+                document.getElementById('dato-slider-min').min = minTs;
+                document.getElementById('dato-slider-min').max = maxTs;
+                document.getElementById('dato-slider-min').value = selectedFilters.datoMin;
+                document.getElementById('dato-slider-max').min = minTs;
+                document.getElementById('dato-slider-max').max = maxTs;
+                document.getElementById('dato-slider-max').value = selectedFilters.datoMax;
+                document.getElementById('dato-value-min').textContent = tsToLabel(selectedFilters.datoMin);
+                document.getElementById('dato-value-max').textContent = tsToLabel(selectedFilters.datoMax);
+            } else {
+                document.getElementById('dato-slider-container').style.display = 'none';
+            }
         }
         
         function toggleFilter(type, value) {
@@ -1339,27 +1394,28 @@ def generate_html(leje_data, ejer_data, output_path):
             updateDisplay();
         }
         
-        function updateDisplay() {
-            var filtered = allBoliger.filter(function(bolig) {
-                // Vis kun boliger hvor værelses-antal ER i de valgte filtre
+        function applyFilters(boliger) {
+            return boliger.filter(function(bolig) {
                 var varelserMatch = selectedFilters.varelser.includes(bolig.varelser);
-                // Vis kun boliger hvor by ER i de valgte filtre  
                 var byMatch = selectedFilters.by.includes(bolig.by);
-                // Vis kun boliger hvor opførelsesår er inden for range (eller hvis det er null)
-                var aarMatch = bolig.opfoerelsesaar === null || 
+                var aarMatch = bolig.opfoerelsesaar === null ||
                               (selectedFilters.aarMin === null || bolig.opfoerelsesaar >= selectedFilters.aarMin) &&
                               (selectedFilters.aarMax === null || bolig.opfoerelsesaar <= selectedFilters.aarMax);
-                // Vis kun boliger hvor type ER i de valgte filtre
                 var typeValue = currentMode === 'leje' ? bolig.boligtype : bolig.anvendelse;
                 var typeMatch = selectedFilters.type.length === 0 || selectedFilters.type.includes(typeValue);
-                
-                return varelserMatch && byMatch && aarMatch && typeMatch;
+                var datoMatch = bolig.dato_ts === null || bolig.dato_ts === undefined ||
+                               (selectedFilters.datoMin === null || bolig.dato_ts >= selectedFilters.datoMin) &&
+                               (selectedFilters.datoMax === null || bolig.dato_ts <= selectedFilters.datoMax);
+                return varelserMatch && byMatch && aarMatch && typeMatch && datoMatch;
             });
-            
+        }
+
+        function updateDisplay() {
+            var filtered = applyFilters(allBoliger);
             updateKPIs(filtered);
             updateMap(filtered);
             updateCharts(filtered);
-            updateInteractiveCharts();  // Opdater de interaktive analyse-grafer
+            updateInteractiveCharts();
         }
         
         function updateKPIs(filtered) {
@@ -1758,6 +1814,23 @@ def generate_html(leje_data, ejer_data, output_path):
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('year-slider-min').addEventListener('input', updateYearSlider);
             document.getElementById('year-slider-max').addEventListener('input', updateYearSlider);
+            
+            document.getElementById('dato-slider-min').addEventListener('input', function() {
+                var val = parseInt(this.value);
+                if (val > selectedFilters.datoMax) { this.value = selectedFilters.datoMax; return; }
+                selectedFilters.datoMin = val;
+                var d = new Date(val * 1000);
+                document.getElementById('dato-value-min').textContent = d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
+                updateDisplay();
+            });
+            document.getElementById('dato-slider-max').addEventListener('input', function() {
+                var val = parseInt(this.value);
+                if (val < selectedFilters.datoMin) { this.value = selectedFilters.datoMin; return; }
+                selectedFilters.datoMax = val;
+                var d = new Date(val * 1000);
+                document.getElementById('dato-value-max').textContent = d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
+                updateDisplay();
+            });
         });
         
         // Initial setup
