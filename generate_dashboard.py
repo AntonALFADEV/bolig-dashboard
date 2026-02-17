@@ -746,14 +746,14 @@ def generate_html(leje_data, ejer_data, output_path):
         /* Turnkey flydende panel */
         #turnkey-toggle {
             position: fixed;
-            top: 70px;
-            right: 20px;
+            bottom: 145px;
+            left: 20px;
             z-index: 1001;
             background: #1e293b;
             border: 1px solid rgba(255,255,255,0.12);
             color: #e2e8f0;
-            padding: 8px 14px;
-            border-radius: 10px;
+            padding: 7px 14px;
+            border-radius: 8px;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -772,16 +772,23 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         #turnkey-panel {
             position: fixed;
-            top: 112px;
-            right: 20px;
+            bottom: 175px;
+            left: 20px;
             z-index: 1000;
             background: #1e293b;
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 14px;
-            padding: 18px 20px;
+            padding: 16px 18px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            width: 220px;
+            width: 460px;
             display: none;
+            /* Ligg ved siden af hinanden i stedet for under hinanden */
+            flex-direction: row;
+            gap: 16px;
+            align-items: flex-end;
+        }
+        #turnkey-panel .tk-field {
+            flex: 1;
         }
         #turnkey-panel .tk-label {
             font-size: 9px;
@@ -794,7 +801,7 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         #turnkey-panel input[type=number] {
             width: 100%;
-            background: rgba(255,255,255,0.07);
+            background: #f1f5f9;
             border: 1px solid rgba(255,255,255,0.15);
             color: #0f172a;
             border-radius: 8px;
@@ -802,8 +809,6 @@ def generate_html(leje_data, ejer_data, output_path):
             font-size: 13px;
             font-weight: 600;
             box-sizing: border-box;
-            margin-bottom: 14px;
-            background: #f1f5f9;
         }
         #turnkey-panel input[type=number]:focus {
             outline: none;
@@ -811,12 +816,12 @@ def generate_html(leje_data, ejer_data, output_path):
             box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
         }
         #turnkey-panel .tk-result {
+            flex: 1;
             background: rgba(59,130,246,0.12);
             border: 1px solid rgba(59,130,246,0.25);
             border-radius: 10px;
-            padding: 12px;
+            padding: 8px 12px;
             text-align: center;
-            margin-top: 4px;
         }
         #turnkey-panel .tk-result-label {
             font-size: 9px;
@@ -824,16 +829,16 @@ def generate_html(leje_data, ejer_data, output_path):
             letter-spacing: 0.1em;
             text-transform: uppercase;
             color: #94a3b8;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         #turnkey-panel .tk-result-value {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             color: #3b82f6;
             line-height: 1;
         }
         #turnkey-panel .tk-result-unit {
-            font-size: 11px;
+            font-size: 10px;
             color: #64748b;
             margin-top: 2px;
         }
@@ -1018,22 +1023,19 @@ def generate_html(leje_data, ejer_data, output_path):
     <button id="turnkey-toggle" onclick="toggleTurnkeyPanel()">🏗️ TURNKEY</button>
 
     <!-- Turnkey flydende panel -->
-    <div id="turnkey-panel">
-        <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#e2e8f0; margin-bottom:16px; text-align:center;">🏗️ TURNKEY BEREGNING</div>
-
-        <span class="tk-label">OPEX (kr/m²/år)</span>
-        <input id="tk-opex" type="number" value="350" min="0" step="10" oninput="updateTurnkey()">
-
-        <span class="tk-label">AFKASTKRAV (%)</span>
-        <input id="tk-yield" type="number" value="4" min="0.1" max="20" step="0.1" oninput="updateTurnkey()">
-
+    <div id="turnkey-panel" style="display:none; flex-direction:row; gap:16px; align-items:flex-end;">
+        <div class="tk-field">
+            <span class="tk-label">OPEX (kr/m²/år)</span>
+            <input id="tk-opex" type="number" value="350" min="0" step="10" oninput="updateTurnkey()">
+        </div>
+        <div class="tk-field">
+            <span class="tk-label">AFKASTKRAV (%)</span>
+            <input id="tk-yield" type="number" value="4" min="0.1" max="20" step="0.1" oninput="updateTurnkey()">
+        </div>
         <div class="tk-result">
-            <div class="tk-result-label">Gns. Turnkey pr. m²</div>
+            <div class="tk-result-label">Gns. Turnkey/m²</div>
             <div class="tk-result-value" id="tk-kpi">-</div>
             <div class="tk-result-unit">kr/m²</div>
-        </div>
-        <div style="font-size:9px; color:#475569; margin-top:10px; text-align:center; line-height:1.5;">
-            (Leje/m² − OPEX) ÷ Afkastkrav
         </div>
     </div>
     
@@ -1449,8 +1451,8 @@ def generate_html(leje_data, ejer_data, output_path):
         function toggleTurnkeyPanel() {
             var panel = document.getElementById('turnkey-panel');
             var btn = document.getElementById('turnkey-toggle');
-            var isOpen = panel.style.display === 'block';
-            panel.style.display = isOpen ? 'none' : 'block';
+            var isOpen = panel.style.display === 'flex';
+            panel.style.display = isOpen ? 'none' : 'flex';
             btn.classList.toggle('open', !isOpen);
         }
 
