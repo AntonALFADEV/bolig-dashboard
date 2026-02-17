@@ -1555,7 +1555,7 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function openOverlay(overlayId) {
             var num = overlayId.replace('overlay', '');
-            document.getElementById(overlayId).style.display = "block";
+            document.getElementById(overlayId).style.display = "flex";
             renderOverlayFilters(num);
             updateInteractiveCharts();
         }
