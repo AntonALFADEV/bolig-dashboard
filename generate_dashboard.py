@@ -1575,10 +1575,30 @@ def generate_html(leje_data, ejer_data, output_path):
         // Initialiser kort
         map = L.map('map').setView([lejeData.center_lat, lejeData.center_lng], 13);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 19
-        }).addTo(map);
+        });
+        
+        var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri, Maxar, Earthstar Geographics',
+            maxZoom: 19
+        });
+        
+        var labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '',
+            maxZoom: 19,
+            opacity: 0.8
+        });
+        
+        osmLayer.addTo(map);
+        
+        var baseMaps = {
+            '🗺️ Kort': osmLayer,
+            '🛰️ Satellit': L.layerGroup([satelliteLayer, labelsLayer])
+        };
+        
+        L.control.layers(baseMaps, null, { position: 'bottomright', collapsed: false }).addTo(map);
         
         // Initialiser charts
         roomChart = new Chart(document.getElementById('roomChart'), {
