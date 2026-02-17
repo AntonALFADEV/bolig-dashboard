@@ -91,122 +91,121 @@ def geocode_address(address):
 def create_scatter_plot(df, mode='leje'):
     """Genererer scatter plot: Areal vs. Leje/Pris per m²"""
     fig, ax = plt.subplots(figsize=(12, 7))
-    
+    fig.patch.set_facecolor('#f0f2f5')
+    ax.set_facecolor('#ffffff')
+
     if mode == 'leje':
         x_col = 'Leje/m2'
         y_col = 'Areal'
         room_col = 'Antal værelser'
-        title = f'Boligpriser: Areal vs. Leje per m²\n(farvelagt efter antal værelser, n={len(df)})'
+        title = f'Areal vs. Leje per m²  (n={len(df)})'
         x_label = 'Leje per m² (kr./m²)'
     else:
         x_col = 'Pris pr. m2 (enhedsareal)'
         y_col = 'Enhedsareal'
         room_col = 'Antal Værelser'
-        title = f'Boligpriser: Areal vs. Pris per m²\n(farvelagt efter antal værelser, n={len(df)})'
+        title = f'Areal vs. Pris per m²  (n={len(df)})'
         x_label = 'Pris per m² (kr./m²)'
-    
-    # Farver for antal værelser
-    colors = {2: '#f39c12', 3: '#e74c3c', 4: '#3498db', 5: '#2ecc71', 6: '#9b59b6', 7: '#1abc9c'}
-    
-    # Plot hvert værelsesniveau
-    for rooms in sorted(df[room_col].unique()):
+
+    colors = {2: '#f59e0b', 3: '#ef4444', 4: '#3b82f6', 5: '#10b981', 6: '#8b5cf6', 7: '#06b6d4'}
+
+    for rooms in sorted(df[room_col].dropna().unique()):
         subset = df[df[room_col] == rooms]
-        color = colors.get(rooms, '#95a5a6')
-        ax.scatter(subset[x_col], subset[y_col], 
-                  c=color, s=100, alpha=0.6, edgecolors='black', linewidth=1.5,
-                  label=f'{rooms} værelser (n={len(subset)})')
-    
+        color = colors.get(int(rooms), '#9ca3af')
+        ax.scatter(subset[x_col], subset[y_col],
+                  c=color, s=80, alpha=0.7, edgecolors='white', linewidth=0.8,
+                  label=f'{int(rooms)} vær. (n={len(subset)})')
+
     # Trendlinje
-    x = df[x_col].values
-    y = df[y_col].values
-    z = np.polyfit(x, y, 1)
-    p = np.poly1d(z)
-    x_line = np.linspace(x.min(), x.max(), 100)
-    
-    # Beregn R²
-    y_pred = p(x)
-    ss_res = np.sum((y - y_pred) ** 2)
-    ss_tot = np.sum((y - np.mean(y)) ** 2)
-    r_squared = 1 - (ss_res / ss_tot)
-    
-    ax.plot(x_line, p(x_line), '--', color='gray', alpha=0.8, linewidth=2,
-           label=f'Trendlinje (R²={r_squared:.3f})')
-    
-    ax.set_xlabel(x_label, fontsize=12, fontweight='bold')
-    ax.set_ylabel('Areal (m²)', fontsize=12, fontweight='bold')
-    ax.set_title(title, fontsize=14, fontweight='bold')
-    ax.legend(loc='upper right', fontsize=10)
-    ax.grid(True, alpha=0.3)
-    
+    valid = df[[x_col, y_col]].dropna()
+    if len(valid) > 2:
+        x = valid[x_col].values
+        y = valid[y_col].values
+        z = np.polyfit(x, y, 1)
+        p = np.poly1d(z)
+        x_line = np.linspace(x.min(), x.max(), 100)
+        y_pred = p(x)
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - (ss_res / ss_tot)
+        ax.plot(x_line, p(x_line), '--', color='#6b7280', alpha=0.7, linewidth=1.5,
+               label=f'Trendlinje (R²={r2:.3f})')
+
+    ax.set_xlabel(x_label, fontsize=11, color='#374151')
+    ax.set_ylabel('Areal (m²)', fontsize=11, color='#374151')
+    ax.set_title(title, fontsize=13, fontweight='bold', color='#1a1d23', pad=12)
+    ax.legend(loc='upper right', fontsize=9, framealpha=0.9, edgecolor='#e4e7ec')
+    ax.grid(True, alpha=0.4, color='#d1d5db', linewidth=0.7)
+    ax.tick_params(colors='#6b7280', labelsize=9)
+    for spine in ax.spines.values():
+        spine.set_edgecolor('#e4e7ec')
+
     plt.tight_layout()
-    
-    # Konverter til base64
     buf = BytesIO()
-    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#f0f2f5')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
-    
     return f"data:image/png;base64,{img_base64}"
 
 def create_heatmap(df, mode='leje'):
     """Genererer heatmap matrix"""
     fig, ax = plt.subplots(figsize=(10, 6))
-    
+    fig.patch.set_facecolor('#f0f2f5')
+    ax.set_facecolor('#f0f2f5')
+
     if mode == 'leje':
         price_col = 'Leje/m2'
         room_col = 'Antal værelser'
         areal_col = 'Areal'
-        title = f'Matrix: Gennemsnitlig leje/m² efter areal og antal værelser\n(Rød = dyr, Grøn = billig)'
+        title = 'Gennemsnitlig leje/m² efter areal og antal værelser'
         label = 'Leje/m² (kr.)'
     else:
         price_col = 'Pris pr. m2 (enhedsareal)'
         room_col = 'Antal Værelser'
         areal_col = 'Enhedsareal'
-        title = f'Matrix: Gennemsnitlig pris/m² efter areal og antal værelser\n(Rød = dyr, Grøn = billig)'
+        title = 'Gennemsnitlig pris/m² efter areal og antal værelser'
         label = 'Pris/m² (kr.)'
-    
-    # Kategoriser areal
+
     df_copy = df.copy()
-    bins = [0, 50, 75, 100, 115, 130, 200]
+    bins   = [0, 50, 75, 100, 115, 130, 200]
     labels = ['0-50 m²', '50-75 m²', '75-100 m²', '100-115 m²', '115-130 m²', '130+ m²']
     df_copy['Areal kategori'] = pd.cut(df_copy[areal_col], bins=bins, labels=labels, include_lowest=True)
-    
-    # Pivot tabel
+
     pivot = df_copy.groupby(['Areal kategori', room_col])[price_col].agg(['mean', 'count']).reset_index()
     pivot_matrix = pivot.pivot(index='Areal kategori', columns=room_col, values='mean')
     count_matrix = pivot.pivot(index='Areal kategori', columns=room_col, values='count')
-    
-    # Plot heatmap
-    sns.heatmap(pivot_matrix, annot=False, fmt='.0f', cmap='RdYlGn_r', 
-                ax=ax, cbar_kws={'label': label}, linewidths=2, linecolor='white')
-    
-    # Tilføj annotations med count
+
+    sns.heatmap(pivot_matrix, annot=False, cmap='Blues',
+                ax=ax, cbar_kws={'label': label, 'shrink': 0.8},
+                linewidths=2, linecolor='#f0f2f5')
+
     for i, row_label in enumerate(pivot_matrix.index):
         for j, col_label in enumerate(pivot_matrix.columns):
             value = pivot_matrix.iloc[i, j]
             count = count_matrix.iloc[i, j]
             if not pd.isna(value):
                 ax.text(j + 0.5, i + 0.5, f'{int(value)}\n(n={int(count)})',
-                       ha='center', va='center', fontsize=11, fontweight='bold', color='black')
-    
-    ax.set_xlabel('Antal værelser', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Areal kategori', fontsize=12, fontweight='bold')
-    ax.set_title(title, fontsize=13, fontweight='bold', pad=15)
-    
+                       ha='center', va='center', fontsize=10, fontweight='600', color='#1a1d23')
+
+    ax.set_xlabel('Antal værelser', fontsize=11, color='#374151')
+    ax.set_ylabel('Areal kategori', fontsize=11, color='#374151')
+    ax.set_title(title, fontsize=13, fontweight='bold', color='#1a1d23', pad=12)
+    ax.tick_params(colors='#6b7280', labelsize=9)
+
     plt.tight_layout()
-    
     buf = BytesIO()
-    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#f0f2f5')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
-    
     return f"data:image/png;base64,{img_base64}"
 
 def create_summary_table(df, mode='leje'):
     """Genererer summary tabel"""
     fig, ax = plt.subplots(figsize=(12, 4))
+    fig.patch.set_facecolor('#f0f2f5')
+    ax.set_facecolor('#f0f2f5')
     ax.axis('off')
     
     if mode == 'leje':
@@ -284,28 +283,31 @@ def create_summary_table(df, mode='leje'):
     table.auto_set_font_size(False)
     table.set_fontsize(10)
     table.scale(1, 2)
-    
-    # Styling
+
+    # Header
     for i in range(len(summary.columns)):
-        table[(0, i)].set_facecolor('#34495e')
-        table[(0, i)].set_text_props(weight='bold', color='white')
-    
-    for i in range(1, len(summary)):
+        table[(0, i)].set_facecolor('#e4e7ec')
+        table[(0, i)].set_text_props(weight='bold', color='#1a1d23')
+
+    # Rækker
+    for i in range(1, len(summary) + 1):
         for j in range(len(summary.columns)):
-            if i == len(summary) - 1:
-                table[(i, j)].set_facecolor('#ecf0f1')
-                table[(i, j)].set_text_props(weight='bold')
+            if i == len(summary):
+                table[(i, j)].set_facecolor('#d4d8e0')
+                table[(i, j)].set_text_props(weight='bold', color='#1a1d23')
+            elif i % 2 == 0:
+                table[(i, j)].set_facecolor('#f8f9fa')
+                table[(i, j)].set_text_props(color='#1a1d23')
             else:
-                table[(i, j)].set_facecolor('#95a5a6' if i % 2 == 0 else '#bdc3c7')
-    
+                table[(i, j)].set_facecolor('#ffffff')
+                table[(i, j)].set_text_props(color='#1a1d23')
+
     plt.tight_layout()
-    
     buf = BytesIO()
-    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#f0f2f5')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
-    
     return f"data:image/png;base64,{img_base64}"
 
 def process_leje_data(excel_path):
@@ -582,25 +584,24 @@ def generate_html(leje_data, ejer_data, output_path):
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --bg-panel:    #1a2236;
-            --bg-panel-2:  #232e45;
-            --bg-panel-3:  #2d3a52;
-            --border:      rgba(255,255,255,0.07);
-            --border-hi:   rgba(255,255,255,0.14);
-            --text-primary: #e8edf5;
-            --text-secondary: #8b9bb4;
-            --text-muted:  #556070;
-            --accent:      #3b82f6;
-            --accent-glow: rgba(59,130,246,0.3);
-            --danger:      #ef4444;
-            --success:     #10b981;
+            --bg-panel:     #f0f2f5;
+            --bg-panel-2:   #e4e7ec;
+            --bg-panel-3:   #d4d8e0;
+            --border:       rgba(0,0,0,0.08);
+            --border-hi:    rgba(0,0,0,0.15);
+            --text-primary: #1a1d23;
+            --text-secondary: #4b5563;
+            --text-muted:   #8b95a3;
+            --accent:       #3b82f6;
+            --accent-glow:  rgba(59,130,246,0.2);
+            --danger:       #ef4444;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', 'Segoe UI', sans-serif;
             overflow: hidden;
-            background: #0f1623;
+            background: #e8eaed;
             color: var(--text-primary);
         }
         #map { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; }
@@ -875,8 +876,8 @@ def generate_html(leje_data, ejer_data, output_path):
             transition: all 0.15s ease;
         }
         .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
-        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #0f1623; }
-        .overlay-chart-inner { flex: 1; background: white; border-radius: 8px; overflow: auto; }
+        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #e4e7ec; }
+        .overlay-chart-inner { flex: 1; background: #f0f2f5; border-radius: 8px; overflow: auto; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -974,8 +975,8 @@ def generate_html(leje_data, ejer_data, output_path):
             color: var(--text-primary);
         }
         .analysis-table tr:last-child td { border-bottom: none; }
-        .analysis-table tr.row-even td { background: rgba(255,255,255,0.02); }
-        .analysis-table tr.row-odd  td { background: rgba(255,255,255,0.005); }
+        .analysis-table tr.row-even td { background: rgba(0,0,0,0.02); }
+        .analysis-table tr.row-odd  td { background: rgba(0,0,0,0.01); }
         .analysis-table tr.total-row td {
             background: var(--bg-panel-2); font-weight: 700;
             color: var(--text-primary); border-top: 1px solid var(--border-hi);
@@ -1047,8 +1048,8 @@ def generate_html(leje_data, ejer_data, output_path):
     
     <!-- Year Range Slider -->
     <div id="sliders-wrapper" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; flex-direction: column; gap: 10px; align-items: center;">
-    <div id="dato-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
-        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
+    <div id="dato-slider-container" style="display: none; background: var(--bg-panel); border: 1px solid var(--border-hi); padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); min-width: 400px;">
+        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
             <span id="dato-slider-label">DATO</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -1057,29 +1058,29 @@ def generate_html(leje_data, ejer_data, output_path):
                 <input type="range" id="dato-slider-max" style="width: 100%; margin: 6px 0;">
             </div>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; font-weight: 600; color: #e2e8f0;">
-            <span style="color:#94a3b8; font-size:10px;">Fra: </span><span id="dato-value-min" style="color:#3b82f6;">-</span>
-            <span style="color:#94a3b8; font-size:10px;">Til: </span><span id="dato-value-max" style="color:#3b82f6;">-</span>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; font-weight: 600;">
+            <span style="color:var(--text-muted); font-size:10px;">Fra: </span><span id="dato-value-min" style="color:var(--accent);">-</span>
+            <span style="color:var(--text-muted); font-size:10px;">Til: </span><span id="dato-value-max" style="color:var(--accent);">-</span>
         </div>
     </div>
-    <div id="year-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
-        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
+    <div id="year-slider-container" style="display: none; background: var(--bg-panel); border: 1px solid var(--border-hi); padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); min-width: 400px;">
+        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
             OPFØRELSESÅR
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span id="year-min" style="font-size: 11px; color: #64748b; min-width: 40px;">2000</span>
+            <span id="year-min" style="font-size: 11px; color: var(--text-secondary); min-width: 40px;">2000</span>
             <div style="flex: 1; position: relative;">
                 <input type="range" id="year-slider-min" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
                 <input type="range" id="year-slider-max" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
-                <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; margin: 8px 0;">
-                    <div id="year-range-fill" style="position: absolute; height: 100%; background: #3b82f6; border-radius: 2px;"></div>
+                <div style="height: 4px; background: var(--bg-panel-3); border-radius: 2px; position: relative; margin: 8px 0;">
+                    <div id="year-range-fill" style="position: absolute; height: 100%; background: var(--accent); border-radius: 2px;"></div>
                 </div>
             </div>
-            <span id="year-max" style="font-size: 11px; color: #64748b; min-width: 40px; text-align: right;">2025</span>
+            <span id="year-max" style="font-size: 11px; color: var(--text-secondary); min-width: 40px; text-align: right;">2025</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; font-weight: 600;">
-            <span><span style="color:#94a3b8; font-size:10px;">Fra: </span><span id="year-value-min" style="color:#3b82f6;">2000</span></span>
-            <span><span style="color:#94a3b8; font-size:10px;">Til: </span><span id="year-value-max" style="color:#3b82f6;">2025</span></span>
+            <span><span style="color:var(--text-muted); font-size:10px;">Fra: </span><span id="year-value-min" style="color:var(--accent);">2000</span></span>
+            <span><span style="color:var(--text-muted); font-size:10px;">Til: </span><span id="year-value-max" style="color:var(--accent);">2025</span></span>
         </div>
     </div>
     </div>
@@ -1098,6 +1099,10 @@ def generate_html(leje_data, ejer_data, output_path):
     </div>
     
     <!-- Overlays -->
+    <!-- Skjulte render-divs til thumbnail generering -->
+    <div id="thumb-render-1" style="position:fixed; left:-9999px; top:0; width:450px; height:300px; visibility:hidden;"></div>
+    <div id="thumb-render-2" style="position:fixed; left:-9999px; top:0; width:450px; height:300px; visibility:hidden;"></div>
+
     <div id="overlay1" class="overlay" onclick="closeOverlay('overlay1')">
         <span class="close" onclick="closeOverlay('overlay1')">&times;</span>
         <div class="overlay-inner" onclick="event.stopPropagation()">
@@ -1175,7 +1180,7 @@ def generate_html(leje_data, ejer_data, output_path):
                     marker: {
                         color: colors[rooms] || '#95a5a6',
                         size: 12,
-                        line: { color: 'black', width: 1 }
+                        line: { color: 'white', width: 0.5 }
                     },
                     text: subset.map(b => mode === 'leje' ? 
                         b.adresse + ', ' + b.by + '<br>Areal: ' + b.areal + ' m²<br>Leje/m²: ' + b.leje_m2 + ' kr.<br>Leje/md: ' + b.leje_maned.toLocaleString('da-DK') + ' kr.<br>Liggetid: ' + b.liggedage + ' dage' :
@@ -1187,17 +1192,19 @@ def generate_html(leje_data, ejer_data, output_path):
             });
             
             var layout = {
+                paper_bgcolor: '#f0f2f5', plot_bgcolor: '#ffffff',
+                font: { family: 'Inter, sans-serif', color: '#374151' },
                 title: {
                     text: mode === 'leje' ? 
-                        'Lejepriser: Areal vs. Leje per m² (n=' + filtered.length + ')' :
-                        'Salgspriser: Areal vs. Pris per m² (n=' + filtered.length + ')',
-                    font: { size: 18, weight: 'bold' }
+                        'Areal vs. Leje per m²  (n=' + filtered.length + ')' :
+                        'Areal vs. Pris per m²  (n=' + filtered.length + ')',
+                    font: { size: 16, color: '#1a1d23' }
                 },
-                xaxis: { title: mode === 'leje' ? 'Leje per m² (kr./m²)' : 'Pris per m² (kr./m²)' },
-                yaxis: { title: 'Areal (m²)' },
+                xaxis: { title: mode === 'leje' ? 'Leje per m² (kr./m²)' : 'Pris per m² (kr./m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
+                yaxis: { title: 'Areal (m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
                 hovermode: 'closest',
                 showlegend: true,
-                legend: { x: 1, y: 1, xanchor: 'right' }
+                legend: { x: 1, y: 1, xanchor: 'right', bgcolor: 'rgba(240,242,245,0.9)', bordercolor: '#d1d5db', borderwidth: 1 }
             };
             
             Plotly.newPlot('scatter-plot', traces, layout, {responsive: true});
@@ -1264,39 +1271,37 @@ def generate_html(leje_data, ejer_data, output_path):
                 x: roomNumbers.map(r => r + ' vær.'),
                 y: categories,
                 type: 'heatmap',
-                colorscale: 'RdYlGn_r',
+                colorscale: 'Blues',
                 text: textValues,
                 hovertemplate: '%{y}<br>%{x}<br>%{text}<extra></extra>',
                 showscale: true,
-                colorbar: {
-                    title: mode === 'leje' ? 'Leje/m² (kr.)' : 'Pris/m² (kr.)'
-                }
+                colorbar: { title: mode === 'leje' ? 'Leje/m² (kr.)' : 'Pris/m² (kr.)' }
             }];
             
             var layout = {
+                paper_bgcolor: '#f0f2f5', plot_bgcolor: '#f0f2f5',
+                font: { family: 'Inter, sans-serif', color: '#374151' },
                 title: {
                     text: mode === 'leje' ?
-                        'Matrix: Gennemsnitlig leje/m² efter areal og værelser' :
-                        'Matrix: Gennemsnitlig pris/m² efter areal og værelser',
-                    font: { size: 16 }
+                        'Gennemsnitlig leje/m² efter areal og værelser' :
+                        'Gennemsnitlig pris/m² efter areal og værelser',
+                    font: { size: 16, color: '#1a1d23' }
                 },
                 xaxis: { title: 'Antal værelser', side: 'bottom' },
                 yaxis: { title: 'Areal kategori' },
                 annotations: []
             };
             
-            // Tilføj tekst i hver celle
             for (var i = 0; i < categories.length; i++) {
                 for (var j = 0; j < roomNumbers.length; j++) {
                     if (zValues[i][j] !== null) {
-                        var annotation = {
+                        layout.annotations.push({
                             x: roomNumbers[j] + ' vær.',
                             y: categories[i],
                             text: textValues[i][j].replace('<br>', '\\n'),
                             showarrow: false,
-                            font: { size: 11, color: 'black', weight: 'bold' }
-                        };
-                        layout.annotations.push(annotation);
+                            font: { size: 11, color: '#1a1d23', family: 'Inter, sans-serif' }
+                        });
                     }
                 }
             }
@@ -1417,14 +1422,91 @@ def generate_html(leje_data, ejer_data, output_path):
             createScatterPlot(filtered);
             createHeatmap(filtered);
             createTable(filtered);
+            // Render thumbnail-versioner i skjulte divs
+            setTimeout(function() {
+                renderThumbScatter(filtered);
+                renderThumbHeatmap(filtered);
+                // Tabel-thumbnail: brug statisk billede
+                var d = currentMode === 'leje' ? lejeData : ejerData;
+                document.getElementById('thumb3').src = d.table_img;
+            }, 100);
         }
-        
+
+        function getThumbLayout(title) {
+            return {
+                paper_bgcolor: '#f0f2f5', plot_bgcolor: '#ffffff',
+                margin: {t: 36, r: 12, b: 40, l: 48},
+                font: {family: 'Inter, sans-serif', size: 10, color: '#374151'},
+                title: {text: title, font: {size: 12, color: '#1a1d23'}, x: 0.5},
+                showlegend: false
+            };
+        }
+
+        function renderThumbScatter(filtered) {
+            var mode = currentMode;
+            var colors = {2:'#f59e0b',3:'#ef4444',4:'#3b82f6',5:'#10b981',6:'#8b5cf6',7:'#06b6d4'};
+            var traces = [];
+            var rooms = [...new Set(filtered.map(b=>b.varelser))].sort();
+            rooms.forEach(function(r) {
+                var sub = filtered.filter(b=>b.varelser===r);
+                traces.push({
+                    x: sub.map(b=>mode==='leje'?b.leje_m2:b.pris_m2),
+                    y: sub.map(b=>b.areal),
+                    mode:'markers', type:'scatter', name:r+' vær.',
+                    marker:{color:colors[r]||'#9ca3af', size:6, opacity:0.75}
+                });
+            });
+            var layout = Object.assign(getThumbLayout(mode==='leje'?'Areal vs. Leje/m²':'Areal vs. Pris/m²'), {
+                xaxis:{title:{text:mode==='leje'?'Leje/m²':'Pris/m²',font:{size:9}}, gridcolor:'#e5e7eb'},
+                yaxis:{title:{text:'Areal (m²)',font:{size:9}}, gridcolor:'#e5e7eb'}
+            });
+            Plotly.newPlot('thumb-render-1', traces, layout, {staticPlot:true, responsive:false})
+                .then(function() {
+                    return Plotly.toImage('thumb-render-1', {format:'png', width:450, height:300});
+                }).then(function(url) {
+                    document.getElementById('thumb1').src = url;
+                });
+        }
+
+        function renderThumbHeatmap(filtered) {
+            var mode = currentMode;
+            var priceKey = mode==='leje'?'leje_m2':'pris_m2';
+            var cats = ['0-50 m²','50-75 m²','75-100 m²','100-115 m²','115-130 m²','130+ m²'];
+            var rooms = [...new Set(filtered.map(b=>b.varelser))].sort();
+            var zData = [], yLabels = [];
+            cats.forEach(function(cat) {
+                var row = rooms.map(function(r) {
+                    var sub = filtered.filter(b=>b.varelser===r && arealCat(b.areal)===cat);
+                    return sub.length > 0 ? Math.round(sub.reduce((s,b)=>s+b[priceKey],0)/sub.length) : null;
+                });
+                if (row.some(v=>v!==null)) { zData.push(row); yLabels.push(cat); }
+            });
+            var layout = Object.assign(getThumbLayout(mode==='leje'?'Leje/m² matrix':'Pris/m² matrix'), {
+                xaxis:{tickvals:rooms.map((_,i)=>i), ticktext:rooms.map(r=>r+'vær.'), tickfont:{size:8}},
+                yaxis:{tickfont:{size:8}}
+            });
+            Plotly.newPlot('thumb-render-2', [{
+                z:zData, x:rooms.map(r=>r+' vær.'), y:yLabels,
+                type:'heatmap', colorscale:'Blues', showscale:false,
+                text:zData, texttemplate:'%{z}', textfont:{size:9, color:'#1a1d23'}
+            }], layout, {staticPlot:true, responsive:false})
+                .then(function() {
+                    return Plotly.toImage('thumb-render-2', {format:'png', width:450, height:300});
+                }).then(function(url) {
+                    document.getElementById('thumb2').src = url;
+                });
+        }
+
+        function arealCat(a) {
+            if (a < 50)  return '0-50 m²';
+            if (a < 75)  return '50-75 m²';
+            if (a < 100) return '75-100 m²';
+            if (a < 115) return '100-115 m²';
+            if (a < 130) return '115-130 m²';
+            return '130+ m²';
+        }
+
         function updateThumbnails() {
-            var data = currentMode === 'leje' ? lejeData : ejerData;
-            document.getElementById('thumb1').src = data.scatter_img;
-            document.getElementById('thumb2').src = data.heatmap_img;
-            document.getElementById('thumb3').src = data.table_img;
-            // Opdater interaktive grafer
             updateInteractiveCharts();
         }
         
@@ -1871,7 +1953,7 @@ def generate_html(leje_data, ejer_data, output_path):
             window._ovTyper = typer;
             
             var btnActive   = 'background:#3b82f6;color:white;border:1px solid #3b82f6;';
-            var btnInactive = 'background:#232e45;color:#8b9bb4;border:1px solid rgba(255,255,255,0.07);';
+            var btnInactive = 'background:#e4e7ec;color:#4b5563;border:1px solid rgba(0,0,0,0.08);';
             var btnBase     = 'padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;';
             var labelStyle  = 'font-size:9px;color:#556070;margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
             var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#556070;margin-bottom:15px;">Filtre</div>';
