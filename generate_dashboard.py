@@ -1296,6 +1296,13 @@ def generate_html(leje_data, ejer_data, output_path):
             }
             updateFilterContent();
             updateDisplay();
+            // Opdater overlay-filtre hvis et overlay er åbent
+            for (var i = 1; i <= 3; i++) {
+                var overlay = document.getElementById('overlay' + i);
+                if (overlay && overlay.style.display === 'block') {
+                    renderOverlayFilters(i);
+                }
+            }
         }
         
         function resetFilters() {
@@ -1449,14 +1456,111 @@ def generate_html(leje_data, ejer_data, output_path):
             byChart.update();
         }
         
+        // Wrapper funktioner - undgår quote-kollision i onclick attributter
+        function ovToggleV(v, num)  { toggleFilter('varelser', v);              renderOverlayFilters(num); }
+        function ovToggleB(i, num)  { toggleFilter('by', window._ovByer[i]);    renderOverlayFilters(num); }
+        function ovToggleT(i, num)  { toggleFilter('type', window._ovTyper[i]); renderOverlayFilters(num); }
+        function ovReset(num)       { resetFilters();                            renderOverlayFilters(num); }
+        function ovYearMin(v, num)  { updateYearFromOverlay(v, 'min', num); }
+        function ovYearMax(v, num)  { updateYearFromOverlay(v, 'max', num); }
+
+        function renderOverlayFilters(num) {
+            var container = document.getElementById('overlay-filters-' + num);
+            if (!container) return;
+            
+            var data = currentMode === 'leje' ? lejeData : ejerData;
+            if (!data || !data.boliger || data.boliger.length === 0) {
+                container.innerHTML = '<div style="color:#999;font-size:11px;padding:10px;">Ingen data</div>';
+                return;
+            }
+            
+            var vaerelser = [...new Set(data.boliger.map(b => b.varelser))].sort((a,b) => a-b);
+            var byer      = [...new Set(data.boliger.map(b => b.by))].sort();
+            var aar       = [...new Set(data.boliger.map(b => b.opfoerelsesaar).filter(y => y !== null))].sort((a,b) => a-b);
+            var typer     = [...new Set(data.boliger.map(b => currentMode === 'leje' ? b.boligtype : b.anvendelse).filter(t => t && t !== 'None'))].sort();
+            var typeLabel = currentMode === 'leje' ? 'Boligtype' : 'Anvendelse';
+
+            // Gem i globale arrays saa wrapper-funktioner kan slaa dem op via index
+            window._ovByer  = byer;
+            window._ovTyper = typer;
+            
+            var s = 'font-size:10px;color:#95a5a6;margin-bottom:5px;font-weight:bold;text-transform:uppercase;';
+            var html = '<div style="font-size:12px;font-weight:bold;color:#2c3e50;margin-bottom:15px;">🎛️ Filtre</div>';
+            
+            // Vaerelser
+            html += '<div style="margin-bottom:12px;"><div style="' + s + '">Vaerelser</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+            vaerelser.forEach(function(v) {
+                var bg  = selectedFilters.varelser.includes(v) ? '#3498db' : '#ecf0f1';
+                var col = selectedFilters.varelser.includes(v) ? 'white'   : '#7f8c8d';
+                html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleV(' + v + ',' + num + ')">' + v + '</button>';
+            });
+            html += '</div></div>';
+            
+            // By - referer til index i _ovByer array
+            html += '<div style="margin-bottom:12px;"><div style="' + s + '">By</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+            byer.forEach(function(b, i) {
+                var bg  = selectedFilters.by.includes(b) ? '#3498db' : '#ecf0f1';
+                var col = selectedFilters.by.includes(b) ? 'white'   : '#7f8c8d';
+                html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleB(' + i + ',' + num + ')">' + b + '</button>';
+            });
+            html += '</div></div>';
+            
+            // Type - referer til index i _ovTyper array
+            if (typer.length > 0 && typer.length < 10) {
+                html += '<div style="margin-bottom:12px;"><div style="' + s + '">' + typeLabel + '</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+                typer.forEach(function(t, i) {
+                    var bg    = selectedFilters.type.includes(t) ? '#3498db' : '#ecf0f1';
+                    var col   = selectedFilters.type.includes(t) ? 'white'   : '#7f8c8d';
+                    var label = t.length > 18 ? t.substring(0, 16) + '...' : t;
+                    html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleT(' + i + ',' + num + ')" title="' + t + '">' + label + '</button>';
+                });
+                html += '</div></div>';
+            }
+            
+            // Opfoerelsesaar
+            if (aar.length > 0) {
+                var minYear = Math.min(...aar);
+                var maxYear = Math.max(...aar);
+                var curMin  = selectedFilters.aarMin !== null ? selectedFilters.aarMin : minYear;
+                var curMax  = selectedFilters.aarMax !== null ? selectedFilters.aarMax : maxYear;
+                html += '<div style="margin-bottom:12px;"><div style="' + s + '">Opf. aar</div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
+                html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMin + '" style="width:100%;margin:2px 0;" oninput="ovYearMin(this.value,' + num + ')">';
+                html += '<div style="font-size:11px;margin-bottom:2px;">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
+                html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMax + '" style="width:100%;margin:2px 0;" oninput="ovYearMax(this.value,' + num + ')">';
+                html += '</div>';
+            }
+            
+            html += '<button style="width:100%;background:#e74c3c;color:white;border:none;padding:7px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;margin-top:5px;" onclick="ovReset(' + num + ')">NULSTIL FILTRE</button>';
+            
+            container.innerHTML = html;
+        }
+        
+        function updateYearFromOverlay(val, type, num) {
+            if (type === 'min') {
+                selectedFilters.aarMin = parseInt(val);
+                var el = document.getElementById('ov-min-' + num);
+                if (el) el.textContent = val;
+            } else {
+                selectedFilters.aarMax = parseInt(val);
+                var el = document.getElementById('ov-max-' + num);
+                if (el) el.textContent = val;
+            }
+            // Sync med hoved-slideren
+            var slider = document.getElementById('year-slider-' + type);
+            if (slider) slider.value = val;
+            updateDisplay();
+            updateInteractiveCharts();
+        }
+        
         function openOverlay(overlayId) {
+            var num = overlayId.replace('overlay', '');
             document.getElementById(overlayId).style.display = "block";
-            // Generer grafer når overlay åbnes
+            renderOverlayFilters(num);
             updateInteractiveCharts();
         }
         
         function closeOverlay(overlayId) {
-            // Luk kun hvis der klikkes på baggrunden, ikke på grafen selv
             if (event.target.className === 'overlay' || event.target.className === 'close') {
                 document.getElementById(overlayId).style.display = "none";
             }
