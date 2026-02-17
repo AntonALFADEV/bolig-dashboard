@@ -662,17 +662,38 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 0; top: 0; width: 100%; height: 100vh;
             background-color: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
         }
-        .overlay-content { 
-            position: relative; margin: 2% auto; padding: 20px; 
-            max-width: 90%; max-height: 90vh; text-align: center; 
+        .overlay-inner {
+            display: flex; width: 100%; height: 100vh; align-items: stretch;
         }
-        .overlay-content img { 
-            max-width: 100%; max-height: 85vh; border-radius: 10px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
+        .overlay-filters {
+            width: 200px; flex-shrink: 0;
+            background: white; padding: 15px; overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+        }
+        .overlay-filters .filter-group { margin-bottom: 12px; }
+        .overlay-filters .filter-label { font-size: 11px; color: #95a5a6; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+        .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 3px; }
+        .overlay-filters .filter-btn {
+            background: #3498db; color: white; border: none;
+            padding: 3px 8px; border-radius: 10px; font-size: 10px; cursor: pointer;
+        }
+        .overlay-filters .filter-btn:not(.active) { background: #ecf0f1; color: #7f8c8d; }
+        .overlay-filters .reset-btn {
+            width: 100%; background: #e74c3c; color: white; border: none;
+            padding: 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; margin-top: 8px;
+        }
+        .overlay-chart {
+            flex: 1; padding: 15px; display: flex; flex-direction: column;
+        }
+        .overlay-chart-inner {
+            flex: 1; background: white; border-radius: 10px; overflow: auto;
         }
         .close {
-            position: absolute; top: 10px; right: 35px;
-            color: #f1f1f1; font-size: 40px; font-weight: bold;
+            position: absolute; top: 10px; right: 20px;
+            color: white; font-size: 35px; font-weight: bold;
+            cursor: pointer; z-index: 2100; line-height: 1;
+        }
+        .close:hover { color: #bbb; }
             cursor: pointer;
         }
         .close:hover { color: #bbb; }
@@ -790,22 +811,37 @@ def generate_html(leje_data, ejer_data, output_path):
     <!-- Overlays -->
     <div id="overlay1" class="overlay" onclick="closeOverlay('overlay1')">
         <span class="close" onclick="closeOverlay('overlay1')">&times;</span>
-        <div class="overlay-content" onclick="event.stopPropagation()">
-            <div id="scatter-plot" style="width: 90%; height: 85vh; background: white; border-radius: 10px;"></div>
+        <div class="overlay-inner" onclick="event.stopPropagation()">
+            <div class="overlay-filters" id="overlay-filters-1"></div>
+            <div class="overlay-chart">
+                <div class="overlay-chart-inner">
+                    <div id="scatter-plot" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
         </div>
     </div>
     
     <div id="overlay2" class="overlay" onclick="closeOverlay('overlay2')">
         <span class="close" onclick="closeOverlay('overlay2')">&times;</span>
-        <div class="overlay-content" onclick="event.stopPropagation()">
-            <div id="heatmap-plot" style="width: 90%; height: 85vh; background: white; border-radius: 10px;"></div>
+        <div class="overlay-inner" onclick="event.stopPropagation()">
+            <div class="overlay-filters" id="overlay-filters-2"></div>
+            <div class="overlay-chart">
+                <div class="overlay-chart-inner">
+                    <div id="heatmap-plot" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
         </div>
     </div>
     
     <div id="overlay3" class="overlay" onclick="closeOverlay('overlay3')">
         <span class="close" onclick="closeOverlay('overlay3')">&times;</span>
-        <div class="overlay-content" onclick="event.stopPropagation()">
-            <div id="table-plot" style="width: 90%; height: 85vh; background: white; border-radius: 10px; overflow: auto;"></div>
+        <div class="overlay-inner" onclick="event.stopPropagation()">
+            <div class="overlay-filters" id="overlay-filters-3"></div>
+            <div class="overlay-chart">
+                <div class="overlay-chart-inner">
+                    <div id="table-plot" style="width:100%; height:100%; padding: 20px;"></div>
+                </div>
+            </div>
         </div>
     </div>
     
