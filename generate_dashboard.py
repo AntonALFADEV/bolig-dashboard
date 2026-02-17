@@ -872,6 +872,28 @@ def generate_html(leje_data, ejer_data, output_path):
         <button class="mode-btn" onclick="switchMode('ejer')">Ejerboliger</button>
         <div style="width:1px; background:#ecf0f1; margin:6px 4px;"></div>
         <button class="mode-btn" id="map-toggle-btn" style="color:#7f8c8d;">🛰️ Satellit</button>
+        <div id="turnkey-inputs" style="display:none; align-items:center; gap:8px; margin-left:8px; padding-left:8px; border-left:1px solid rgba(255,255,255,0.15);">
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.08em; color:#94a3b8;">TURNKEY</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <label style="font-size:10px; color:#94a3b8;">OPEX</label>
+                <input id="tk-opex" type="number" value="350" min="0" step="10"
+                    style="width:70px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; padding:4px 7px; font-size:11px; font-weight:600; text-align:center;"
+                    oninput="updateTurnkey()">
+                <span style="font-size:10px; color:#64748b;">kr/m²</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <label style="font-size:10px; color:#94a3b8;">AFKAST</label>
+                <input id="tk-yield" type="number" value="4" min="0.1" max="20" step="0.1"
+                    style="width:55px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; padding:4px 7px; font-size:11px; font-weight:600; text-align:center;"
+                    oninput="updateTurnkey()">
+                <span style="font-size:10px; color:#64748b;">%</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); border-radius:6px; padding:4px 10px;">
+                <span style="font-size:10px; color:#94a3b8;">GNS.</span>
+                <span id="tk-kpi" style="font-size:12px; font-weight:700; color:#3b82f6;">-</span>
+                <span style="font-size:10px; color:#64748b;">kr/m²</span>
+            </div>
+        </div>
     </div>
     
     <div id="map"></div>
@@ -1180,7 +1202,8 @@ def generate_html(leje_data, ejer_data, output_path):
                         pris_m2_sum: 0,
                         pris_total_sum: 0,
                         varelser_sum: 0,
-                        liggedage_sum: 0
+                        liggedage_sum: 0,
+                        turnkey_sum: 0
                     };
                 }
                 
@@ -1190,7 +1213,10 @@ def generate_html(leje_data, ejer_data, output_path):
                 cat.pris_m2_sum += (mode === 'leje' ? b.leje_m2 : b.pris_m2);
                 cat.pris_total_sum += (mode === 'leje' ? b.leje_maned : b.pris);
                 cat.varelser_sum += b.varelser;
-                if (mode === 'leje') cat.liggedage_sum += b.liggedage;
+                if (mode === 'leje') {
+                    cat.liggedage_sum += b.liggedage;
+                    cat.turnkey_sum += calcTurnkey(b.leje_m2, tkOpex, tkYld);
+                }
             });
             
             // Byg tabel HTML
@@ -1203,8 +1229,13 @@ def generate_html(leje_data, ejer_data, output_path):
             html += '<th style="padding: 12px; border: 1px solid #ddd;">Antal værelser</th>';
             if (mode === 'leje') {
                 html += '<th style="padding: 12px; border: 1px solid #ddd;">Liggetid (dage)</th>';
+                html += '<th style="padding: 12px; border: 1px solid #ddd; background:#1e40af; color:#93c5fd;">Turnkey pr. m²</th>';
             }
             html += '</tr>';
+
+            // Hent turnkey parametre
+            var tkOpex = parseFloat(document.getElementById('tk-opex').value) || 0;
+            var tkYld  = parseFloat(document.getElementById('tk-yield').value) || 4;
             
             var categories = ['0-50 m²', '50-75 m²', '75-100 m²', '100-115 m²', '115-130 m²', '130+ m²'];
             var rowIndex = 0;
@@ -1221,6 +1252,7 @@ def generate_html(leje_data, ejer_data, output_path):
                     html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + (data.varelser_sum / data.count).toFixed(1) + '</td>';
                     if (mode === 'leje') {
                         html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + Math.round(data.liggedage_sum / data.count) + '</td>';
+                        html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#eff6ff; color:#1d4ed8; font-weight:600;">' + Math.round(data.turnkey_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
                     }
                     html += '</tr>';
                     rowIndex++;
@@ -1240,6 +1272,10 @@ def generate_html(leje_data, ejer_data, output_path):
             if (mode === 'leje') {
                 var avgLiggedage = Math.round(filtered.reduce((s, b) => s + b.liggedage, 0) / filtered.length);
                 html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgLiggedage + '</td>';
+                var avgTurnkey = Math.round(filtered.reduce((s, b) => s + calcTurnkey(b.leje_m2, tkOpex, tkYld), 0) / filtered.length);
+                html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#1e40af; color:#93c5fd;">' + avgTurnkey.toLocaleString('da-DK') + ' kr.</td>';
+                // Opdater KPI
+                document.getElementById('tk-kpi').textContent = avgTurnkey.toLocaleString('da-DK');
             }
             html += '</tr>';
             
@@ -1264,6 +1300,28 @@ def generate_html(leje_data, ejer_data, output_path):
             updateInteractiveCharts();
         }
         
+        // ── Turnkey beregning ──────────────────────────────────────────
+        function calcTurnkey(lejeM2, opex, yieldPct) {
+            return Math.round((lejeM2 - opex) / (yieldPct / 100));
+        }
+
+        function updateTurnkey() {
+            if (currentMode !== 'leje') return;
+            var opex  = parseFloat(document.getElementById('tk-opex').value)  || 0;
+            var yld   = parseFloat(document.getElementById('tk-yield').value) || 4;
+            var filtered = applyFilters(allBoliger);
+            if (filtered.length === 0) return;
+
+            var avgTkM2 = Math.round(
+                filtered.reduce((s, b) => s + calcTurnkey(b.leje_m2, opex, yld), 0) / filtered.length
+            );
+            document.getElementById('tk-kpi').textContent = avgTkM2.toLocaleString('da-DK');
+
+            // Opdater popup og tabel med ny beregning
+            updateMap(filtered);
+            createTable(filtered);
+        }
+
         function switchMode(mode) {
             currentMode = mode;
             allBoliger = mode === 'leje' ? lejeData.boliger : ejerData.boliger;
@@ -1272,11 +1330,14 @@ def generate_html(leje_data, ejer_data, output_path):
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
+
+            // Vis/skjul turnkey panel
+            document.getElementById('turnkey-inputs').style.display = mode === 'leje' ? 'flex' : 'none';
             
             var data = mode === 'leje' ? lejeData : ejerData;
             map.setView([data.center_lat, data.center_lng], 13);
             
-            initializeFilters(data);  // Dette sætter alle filtre aktive
+            initializeFilters(data);
             updateKPIContent();
             updateFilterContent();
             updateDisplay();
@@ -1508,6 +1569,7 @@ def generate_html(leje_data, ejer_data, output_path):
             updateMap(filtered);
             updateCharts(filtered);
             updateInteractiveCharts();
+            if (currentMode === 'leje') updateTurnkey();
         }
         
         function updateKPIs(filtered) {
@@ -1577,11 +1639,20 @@ def generate_html(leje_data, ejer_data, output_path):
                 var popupContent = currentMode === 'leje' 
                     ? `<div class="info-box">
                         <h3>${bolig.adresse}, ${bolig.by}</h3>
-                        <p><strong>Areal:</strong> ${bolig.areal} m2</p>
+                        <p><strong>Areal:</strong> ${bolig.areal} m²</p>
                         <p><strong>Antal værelser:</strong> ${bolig.varelser}</p>
-                        <p><strong>Leje pr. m2:</strong> ${bolig.leje_m2} kr.</p>
+                        <p><strong>Leje pr. m²:</strong> ${bolig.leje_m2.toLocaleString('da-DK')} kr.</p>
                         <p><strong>Leje pr. måned:</strong> ${bolig.leje_maned.toLocaleString('da-DK')} kr.</p>
                         <p><strong>Liggetid:</strong> ${bolig.liggedage} dage</p>
+                        ${(function() {
+                            var opex = parseFloat(document.getElementById('tk-opex').value) || 0;
+                            var yld  = parseFloat(document.getElementById('tk-yield').value) || 4;
+                            var tkM2    = calcTurnkey(bolig.leje_m2, opex, yld);
+                            var tkTotal = Math.round(tkM2 * bolig.areal);
+                            return '<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">'
+                                 + '<p style="color:#3b82f6;font-weight:700;">🏗️ Turnkey pr. m²: ' + tkM2.toLocaleString('da-DK') + ' kr.</p>'
+                                 + '<p style="color:#3b82f6;font-weight:700;">🏗️ Turnkey total: ' + tkTotal.toLocaleString('da-DK') + ' kr.</p>';
+                        })()}
                     </div>`
                     : `<div class="info-box">
                         <h3>${bolig.handelsnavn}</h3>
@@ -1931,6 +2002,8 @@ def generate_html(leje_data, ejer_data, output_path):
         updateFilterContent();
         updateDisplay();
         updateThumbnails();
+        // Vis turnkey panel (leje er default)
+        document.getElementById('turnkey-inputs').style.display = 'flex';
         
         setTimeout(function() { map.invalidateSize(); }, 100);
     </script>
