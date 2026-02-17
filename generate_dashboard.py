@@ -579,248 +579,244 @@ def generate_html(leje_data, ejer_data, output_path):
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-panel:    #1a2236;
+            --bg-panel-2:  #232e45;
+            --bg-panel-3:  #2d3a52;
+            --border:      rgba(255,255,255,0.07);
+            --border-hi:   rgba(255,255,255,0.14);
+            --text-primary: #e8edf5;
+            --text-secondary: #8b9bb4;
+            --text-muted:  #556070;
+            --accent:      #3b82f6;
+            --accent-glow: rgba(59,130,246,0.3);
+            --danger:      #ef4444;
+            --success:     #10b981;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            overflow: hidden;
+            background: #0f1623;
+            color: var(--text-primary);
+        }
         #map { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; }
-        
+
+        /* ── Mode toggle ─────────────────────────────── */
         .mode-toggle {
             position: fixed;
-            top: 20px;
+            top: 18px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1001;
-            background: white;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-hi);
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
             display: flex;
+            align-items: center;
             padding: 4px;
+            gap: 2px;
         }
-        
         .mode-btn {
             background: transparent;
             border: none;
-            padding: 10px 25px;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 8px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            border-radius: 20px;
-            transition: all 0.3s;
-            color: #2c3e50;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
         }
-        
-        .mode-btn.active {
-            background: #3498db;
-            color: white;
-        }
-        
+        .mode-btn:hover { color: var(--text-primary); background: var(--bg-panel-2); }
+        .mode-btn.active { background: var(--accent); color: white; }
+        .mode-divider { width: 1px; height: 20px; background: var(--border-hi); margin: 0 4px; }
+
+        /* ── BI boxes ────────────────────────────────── */
         .bi-boxes {
-            position: fixed; 
-            top: 80px; 
-            right: 20px;
+            position: fixed;
+            top: 74px;
+            right: 18px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
-        
         .bi-box {
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            padding: 10px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            padding: 12px;
             width: 200px;
         }
-        
         .bi-box-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
         }
-        
+
+        /* ── KPI ─────────────────────────────────────── */
         .kpi-compact {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 6px;
         }
-        
-        .kpi-item {
-            text-align: center;
-        }
-        
+        .kpi-item { text-align: center; }
         .kpi-item.full {
             grid-column: span 2;
-            background: #3498db;
-            color: white;
+            background: var(--accent);
             padding: 8px;
-            border-radius: 4px;
+            border-radius: 6px;
         }
-        
         .kpi-value-small {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.1;
         }
-        
+        .kpi-item.full .kpi-value-small { color: white; }
         .kpi-label-small {
-            font-size: 9px;
-            opacity: 0.7;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 2px;
         }
-        
-        canvas {
-            max-height: 120px !important;
-        }
-        
-        .filter-group {
-            margin-bottom: 14px;
-        }
-        
+        .kpi-item.full .kpi-label-small { color: rgba(255,255,255,0.7); }
+
+        canvas { max-height: 120px !important; }
+
+        /* ── Filters ─────────────────────────────────── */
+        .filter-group { margin-bottom: 14px; }
         .filter-label {
             font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: var(--text-muted);
             margin-bottom: 7px;
             display: block;
         }
-        
-        .filter-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
+        .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
         .filter-btn {
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #94a3b8;
+            background: var(--bg-panel-2);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
             padding: 4px 11px;
             font-size: 11px;
             font-weight: 500;
-            border-radius: 20px;
+            font-family: inherit;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.15s ease;
         }
-        
-        .filter-btn:hover {
-            background: rgba(255,255,255,0.13);
-            color: #e2e8f0;
-            border-color: rgba(255,255,255,0.25);
-        }
-        
-        .filter-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(59,130,246,0.4);
-        }
-        
+        .filter-btn:hover { background: var(--bg-panel-3); color: var(--text-primary); border-color: var(--border-hi); }
+        .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
         .reset-btn {
             background: transparent;
-            color: #ef4444;
-            border: 1px solid rgba(239,68,68,0.4);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.3);
             padding: 7px;
             font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            border-radius: 8px;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
-            transition: all 0.18s ease;
+            transition: all 0.15s ease;
         }
-        
-        .reset-btn:hover {
-            background: rgba(239,68,68,0.12);
-            border-color: #ef4444;
-            color: #ef4444;
-        }
+        .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
 
-        /* Filter panel baggrund */
-        #filter-panel {
-            background: #1e293b !important;
-            border-right: 1px solid rgba(255,255,255,0.08) !important;
-        }
+        #filter-panel { background: var(--bg-panel) !important; border-right: 1px solid var(--border) !important; }
 
-        /* Turnkey flydende panel */
+        /* ── Turnkey panel ───────────────────────────── */
         #turnkey-toggle {
             position: fixed;
             bottom: 145px;
-            left: 20px;
+            left: 18px;
             z-index: 1001;
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #e2e8f0;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-hi);
+            color: var(--text-secondary);
             padding: 7px 14px;
             border-radius: 8px;
             font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-            transition: all 0.18s ease;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            transition: all 0.15s ease;
             display: none;
         }
-        #turnkey-toggle:hover {
-            background: #334155;
-            border-color: rgba(255,255,255,0.2);
-        }
-        #turnkey-toggle.open {
-            background: #3b82f6;
-            border-color: #3b82f6;
-        }
+        #turnkey-toggle:hover { background: var(--bg-panel-2); color: var(--text-primary); }
+        #turnkey-toggle.open { background: var(--accent); color: white; border-color: var(--accent); }
+
         #turnkey-panel {
             position: fixed;
             bottom: 175px;
-            left: 20px;
+            left: 18px;
             z-index: 1000;
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
             padding: 16px 18px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             width: 460px;
             display: none;
-            /* Ligg ved siden af hinanden i stedet for under hinanden */
             flex-direction: row;
-            gap: 16px;
+            gap: 14px;
             align-items: flex-end;
         }
-        #turnkey-panel .tk-field {
-            flex: 1;
-        }
+        #turnkey-panel .tk-field { flex: 1; }
         #turnkey-panel .tk-label {
             font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: #94a3b8;
-            margin-bottom: 5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
             display: block;
         }
         #turnkey-panel input[type=number] {
             width: 100%;
-            background: #f1f5f9;
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #0f172a;
-            border-radius: 8px;
-            padding: 7px 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            border-radius: 6px;
+            padding: 8px 10px;
             font-size: 13px;
             font-weight: 600;
+            font-family: inherit;
             box-sizing: border-box;
         }
         #turnkey-panel input[type=number]:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
         }
         #turnkey-panel .tk-result {
             flex: 1;
-            background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.25);
-            border-radius: 10px;
-            padding: 8px 12px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 8px;
+            padding: 10px 12px;
             text-align: center;
         }
         #turnkey-panel .tk-result-label {
@@ -828,186 +824,170 @@ def generate_html(leje_data, ejer_data, output_path):
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: #94a3b8;
-            margin-bottom: 2px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
         }
         #turnkey-panel .tk-result-value {
             font-size: 20px;
             font-weight: 800;
-            color: #3b82f6;
+            color: var(--accent);
             line-height: 1;
         }
         #turnkey-panel .tk-result-unit {
             font-size: 10px;
-            color: #64748b;
-            margin-top: 2px;
-        }
-        
-        /* Overlay filter panel */
-        .overlay-filters {
-            background: #1e293b !important;
-            border-right: 1px solid rgba(255,255,255,0.08) !important;
-        }
-        .overlay-filters .filter-label { 
-            font-size: 9px; letter-spacing: 0.12em; color: #94a3b8; 
-            margin-bottom: 7px; font-weight: 700; text-transform: uppercase; 
-        }
-        .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
-        .overlay-filters .filter-btn {
-            background: rgba(255,255,255,0.07); color: #94a3b8; 
-            border: 1px solid rgba(255,255,255,0.12);
-            padding: 4px 11px; border-radius: 20px; font-size: 11px; cursor: pointer;
-            transition: all 0.18s ease;
-        }
-        .overlay-filters .filter-btn.active { 
-            background: #3b82f6; color: white; border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(59,130,246,0.4);
-        }
-        .overlay-filters .reset-btn {
-            width: 100%; background: transparent; color: #ef4444; 
-            border: 1px solid rgba(239,68,68,0.4);
-            padding: 7px; border-radius: 8px; cursor: pointer; 
-            font-size: 10px; font-weight: 700; letter-spacing: 0.08em; margin-top: 10px;
-            transition: all 0.18s ease;
-        }
-        .overlay-filters .reset-btn:hover {
-            background: rgba(239,68,68,0.12); border-color: #ef4444;
+            color: var(--text-muted);
+            margin-top: 3px;
         }
 
-        /* Slider panels */
-        #sliders-wrapper > div {
-            background: #1e293b !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
-        }
-
-        /* Custom range input styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 4px;
-            background: rgba(255,255,255,0.12);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #3b82f6;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(59,130,246,0.6);
-            transition: transform 0.15s ease;
-        }
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-        input[type=range]::-moz-range-thumb {
-            width: 16px; height: 16px;
-            background: #3b82f6; border-radius: 50%;
-            cursor: pointer; border: none;
-            box-shadow: 0 0 8px rgba(59,130,246,0.6);
-        }
-        
-        .thumbnails {
-            position: fixed; bottom: 20px; left: 20px;
-            z-index: 1000; display: flex; gap: 15px;
-        }
-        .thumbnail {
-            width: 150px; height: 100px; cursor: pointer;
-            border-radius: 8px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            transition: all 0.3s; opacity: 0.7; border: 3px solid white;
-        }
-        .thumbnail:hover { 
-            opacity: 1; transform: scale(1.05); 
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6); 
-        }
-        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-        
+        /* ── Overlay ─────────────────────────────────── */
         .overlay {
             display: none; position: fixed; z-index: 2000;
             left: 0; top: 0; width: 100%; height: 100vh;
-            background-color: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+            background-color: rgba(10,16,30,0.85);
+            backdrop-filter: blur(6px);
         }
-        .overlay-inner {
-            display: flex; width: 100%; height: 100vh; align-items: stretch;
-        }
+        .overlay-inner { display: flex; width: 100%; height: 100vh; align-items: stretch; }
         .overlay-filters {
-            width: 200px; flex-shrink: 0;
-            background: white; padding: 15px; overflow-y: auto;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            width: 210px; flex-shrink: 0;
+            background: var(--bg-panel) !important;
+            border-right: 1px solid var(--border) !important;
+            padding: 16px; overflow-y: auto;
         }
-        .overlay-filters .filter-group { margin-bottom: 12px; }
-        .overlay-filters .filter-label { font-size: 11px; color: #95a5a6; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
-        .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 3px; }
+        .overlay-filters .filter-group { margin-bottom: 14px; }
+        .overlay-filters .filter-label {
+            font-size: 9px; letter-spacing: 0.12em; color: var(--text-muted);
+            margin-bottom: 7px; font-weight: 700; text-transform: uppercase;
+        }
+        .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
         .overlay-filters .filter-btn {
-            background: #3498db; color: white; border: none;
-            padding: 3px 8px; border-radius: 10px; font-size: 10px; cursor: pointer;
+            background: var(--bg-panel-2); color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 4px 11px; border-radius: 6px; font-size: 11px;
+            font-family: inherit; cursor: pointer; transition: all 0.15s ease;
         }
-        .overlay-filters .filter-btn:not(.active) { background: #ecf0f1; color: #7f8c8d; }
+        .overlay-filters .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .overlay-filters .reset-btn {
-            width: 100%; background: #e74c3c; color: white; border: none;
-            padding: 6px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; margin-top: 8px;
+            width: 100%; background: transparent; color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.3);
+            padding: 7px; border-radius: 6px; cursor: pointer;
+            font-size: 10px; font-weight: 600; font-family: inherit;
+            letter-spacing: 0.06em; text-transform: uppercase; margin-top: 10px;
+            transition: all 0.15s ease;
         }
-        .overlay-chart {
-            flex: 1; padding: 15px; display: flex; flex-direction: column;
-        }
-        .overlay-chart-inner {
-            flex: 1; background: white; border-radius: 10px; overflow: auto;
-        }
+        .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
+        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #0f1623; }
+        .overlay-chart-inner { flex: 1; background: white; border-radius: 8px; overflow: auto; }
         .close {
-            position: absolute; top: 10px; right: 20px;
-            color: white; font-size: 35px; font-weight: bold;
+            position: absolute; top: 12px; right: 18px;
+            color: var(--text-secondary); font-size: 22px; font-weight: 400;
             cursor: pointer; z-index: 2100; line-height: 1;
+            font-family: inherit; transition: color 0.15s;
         }
-        .close:hover { color: #bbb; }
-            cursor: pointer;
+        .close:hover { color: var(--text-primary); }
+
+        /* ── Map popups & legend ─────────────────────── */
+        .info-box {
+            padding: 14px; background: var(--bg-panel);
+            border: 1px solid var(--border-hi);
+            border-radius: 8px; color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-width: 200px;
         }
-        .close:hover { color: #bbb; }
-        
-        .info-box { padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .info-box h3 { margin: 0 0 10px 0; color: #2c3e50; }
-        .info-box p { margin: 5px 0; font-size: 14px; }
-        
-        .legend { padding: 10px; background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .legend-item { margin: 5px 0; display: flex; align-items: center; }
-        .legend-color { width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 2px solid black; }
-        
-        /* Range Slider Styling */
-        input[type="range"] {
+        .info-box h3 { margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .info-box p { margin: 4px 0; font-size: 12px; color: var(--text-secondary); }
+        .info-box strong { color: var(--text-primary); font-weight: 600; }
+        .info-box hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+        .legend {
+            padding: 10px 12px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        .legend h4 { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .legend-item { margin: 5px 0; display: flex; align-items: center; font-size: 11px; color: var(--text-secondary); }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+        .legend p { font-size: 10px; color: var(--text-muted); margin-top: 8px; font-style: normal; }
+
+        /* ── Sliders ─────────────────────────────────── */
+        #sliders-wrapper > div {
+            background: var(--bg-panel) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+            border-radius: 10px !important;
+        }
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            height: 3px; background: var(--bg-panel-3);
+            border-radius: 2px; outline: none; cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            appearance: none;
-            pointer-events: all;
-            cursor: pointer;
+            width: 14px; height: 14px;
+            background: var(--accent); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 0 6px var(--accent-glow); transition: transform 0.15s ease;
         }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            background: #3498db;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            pointer-events: all;
-            position: relative;
-            z-index: 3;
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+        input[type=range]::-moz-range-thumb {
+            width: 14px; height: 14px;
+            background: var(--accent); border-radius: 50%; cursor: pointer; border: none;
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            background: #3498db;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        #year-slider-min, #year-slider-max {
+            pointer-events: none; -webkit-appearance: none; height: 3px; background: transparent;
         }
-        #year-slider-min::-webkit-slider-thumb { z-index: 4; }
-        #year-slider-max::-webkit-slider-thumb { z-index: 5; }
+        #year-slider-min::-webkit-slider-thumb { pointer-events: all; z-index: 4; }
+        #year-slider-max::-webkit-slider-thumb { pointer-events: all; z-index: 5; }
+
+        /* ── Thumbnails ──────────────────────────────── */
+        .thumbnails {
+            position: fixed; bottom: 18px; left: 18px;
+            z-index: 1000; display: flex; gap: 10px;
+        }
+        .thumbnail {
+            width: 148px; height: 98px; cursor: pointer;
+            border-radius: 8px; overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            transition: all 0.2s; opacity: 0.65;
+            border: 1px solid var(--border-hi);
+        }
+        .thumbnail:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ── Table ───────────────────────────────────── */
+        .analysis-table {
+            width: 100%; border-collapse: collapse;
+            font-family: 'Inter', sans-serif; font-size: 12px;
+        }
+        .analysis-table th {
+            background: var(--bg-panel-2); color: var(--text-secondary);
+            font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; padding: 11px 14px;
+            border-bottom: 1px solid var(--border-hi); text-align: center;
+        }
+        .analysis-table th.tk-col {
+            background: var(--accent); color: rgba(255,255,255,0.9);
+        }
+        .analysis-table td {
+            padding: 10px 14px; text-align: center;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .analysis-table tr:last-child td { border-bottom: none; }
+        .analysis-table tr.row-even td { background: rgba(255,255,255,0.02); }
+        .analysis-table tr.row-odd  td { background: rgba(255,255,255,0.005); }
+        .analysis-table tr.total-row td {
+            background: var(--bg-panel-2); font-weight: 700;
+            color: var(--text-primary); border-top: 1px solid var(--border-hi);
+        }
+        .analysis-table td.tk-cell {
+            color: var(--accent); font-weight: 600;
+            background: rgba(59,130,246,0.06) !important;
+        }
+        .analysis-table td.tk-cell-total {
+            color: #93c5fd; font-weight: 700;
+            background: rgba(59,130,246,0.15) !important;
+        }
     </style>
 </head>
 <body>
@@ -1015,12 +995,12 @@ def generate_html(leje_data, ejer_data, output_path):
     <div class="mode-toggle">
         <button class="mode-btn active" onclick="switchMode('leje')">Lejeboliger</button>
         <button class="mode-btn" onclick="switchMode('ejer')">Ejerboliger</button>
-        <div style="width:1px; background:#ecf0f1; margin:6px 4px;"></div>
-        <button class="mode-btn" id="map-toggle-btn" style="color:#7f8c8d;">🛰️ Satellit</button>
+        <div class="mode-divider"></div>
+        <button class="mode-btn" id="map-toggle-btn" style="color:var(--text-secondary);">Satellit</button>
     </div>
 
     <!-- Turnkey toggle knap -->
-    <button id="turnkey-toggle" onclick="toggleTurnkeyPanel()">🏗️ TURNKEY</button>
+    <button id="turnkey-toggle" onclick="toggleTurnkeyPanel()">Turnkey</button>
 
     <!-- Turnkey flydende panel -->
     <div id="turnkey-panel" style="display:none; flex-direction:row; gap:16px; align-items:flex-end;">
@@ -1044,22 +1024,22 @@ def generate_html(leje_data, ejer_data, output_path):
     <!-- BI Boxes -->
     <div class="bi-boxes">
         <div class="bi-box">
-            <div class="bi-box-title" id="kpi-title">📊 Nøgletal</div>
+            <div class="bi-box-title" id="kpi-title">Nøgletal</div>
             <div class="kpi-compact" id="kpi-content"></div>
         </div>
         
         <div class="bi-box">
-            <div class="bi-box-title">🏠 Værelser</div>
+            <div class="bi-box-title">Værelser</div>
             <canvas id="roomChart"></canvas>
         </div>
         
         <div class="bi-box">
-            <div class="bi-box-title">📍 Byer</div>
+            <div class="bi-box-title">Byer</div>
             <canvas id="byChart"></canvas>
         </div>
         
         <div class="bi-box">
-            <div class="bi-box-title">🔍 Filtre</div>
+            <div class="bi-box-title">Filtre</div>
             <div id="filter-content"></div>
         </div>
     </div>
@@ -1069,7 +1049,7 @@ def generate_html(leje_data, ejer_data, output_path):
     <div id="sliders-wrapper" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; flex-direction: column; gap: 10px; align-items: center;">
     <div id="dato-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
         <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
-            📅 <span id="dato-slider-label">DATO</span>
+            <span id="dato-slider-label">DATO</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <div style="flex: 1;">
@@ -1084,7 +1064,7 @@ def generate_html(leje_data, ejer_data, output_path):
     </div>
     <div id="year-slider-container" style="display: none; background: #1e293b; border: 1px solid rgba(255,255,255,0.08); padding: 15px 25px; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 400px;">
         <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; text-align: center;">
-            🏗️ OPFØRELSESÅR
+            OPFØRELSESÅR
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <span id="year-min" style="font-size: 11px; color: #64748b; min-width: 40px;">2000</span>
@@ -1369,69 +1349,66 @@ def generate_html(leje_data, ejer_data, output_path):
                 }
             });
             
-            // Byg tabel HTML
-            var html = '<table style="width: 100%; border-collapse: collapse; margin: 20px;">';
-            html += '<tr style="background: #34495e; color: white;">';
-            html += '<th style="padding: 12px; border: 1px solid #ddd;">Areal</th>';
-            html += '<th style="padding: 12px; border: 1px solid #ddd;">Antal ' + (mode === 'leje' ? 'lejepunkter' : 'salgspunkter') + '</th>';
-            html += '<th style="padding: 12px; border: 1px solid #ddd;">' + (mode === 'leje' ? 'Leje pr. m²' : 'Pris pr. m²') + '</th>';
-            html += '<th style="padding: 12px; border: 1px solid #ddd;">' + (mode === 'leje' ? 'Leje pr. måned' : 'Pris') + '</th>';
-            html += '<th style="padding: 12px; border: 1px solid #ddd;">Antal værelser</th>';
+            // Byg tabel HTML med CSS-klasser
+            var html = '<table class="analysis-table">';
+            html += '<tr>';
+            html += '<th>Areal</th>';
+            html += '<th>Antal ' + (mode === 'leje' ? 'lejepunkter' : 'salgspunkter') + '</th>';
+            html += '<th>' + (mode === 'leje' ? 'Leje pr. m²' : 'Pris pr. m²') + '</th>';
+            html += '<th>' + (mode === 'leje' ? 'Leje pr. måned' : 'Pris') + '</th>';
+            html += '<th>Antal værelser</th>';
             if (mode === 'leje') {
-                html += '<th style="padding: 12px; border: 1px solid #ddd;">Liggetid (dage)</th>';
-                html += '<th style="padding: 12px; border: 1px solid #ddd; background:#1e40af; color:#93c5fd;">Turnkey pr. m²</th>';
+                html += '<th>Liggetid (dage)</th>';
+                html += '<th class="tk-col">Turnkey pr. m²</th>';
             }
             html += '</tr>';
-            
+
             var categories = ['0-50 m²', '50-75 m²', '75-100 m²', '100-115 m²', '115-130 m²', '130+ m²'];
             var rowIndex = 0;
             categories.forEach(function(cat) {
                 if (categorized[cat]) {
                     var data = categorized[cat];
-                    var bgColor = rowIndex % 2 === 0 ? '#ecf0f1' : '#bdc3c7';
-                    
-                    html += '<tr style="background: ' + bgColor + ';">';
-                    html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + cat + '</td>';
-                    html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + data.count + '</td>';
-                    html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + Math.round(data.pris_m2_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
-                    html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + Math.round(data.pris_total_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
-                    html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + (data.varelser_sum / data.count).toFixed(1) + '</td>';
+                    var rowClass = rowIndex % 2 === 0 ? 'row-even' : 'row-odd';
+                    html += '<tr class="' + rowClass + '">';
+                    html += '<td>' + cat + '</td>';
+                    html += '<td>' + data.count + '</td>';
+                    html += '<td>' + Math.round(data.pris_m2_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
+                    html += '<td>' + Math.round(data.pris_total_sum / data.count).toLocaleString('da-DK') + ' kr.</td>';
+                    html += '<td>' + (data.varelser_sum / data.count).toFixed(1) + '</td>';
                     if (mode === 'leje') {
-                        html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + Math.round(data.liggedage_sum / data.count) + '</td>';
+                        html += '<td>' + Math.round(data.liggedage_sum / data.count) + '</td>';
                         var tkCount = data.turnkey_count || 0;
                         var tkVal = tkCount > 0 ? Math.round(data.turnkey_sum / tkCount).toLocaleString('da-DK') + ' kr.' : '-';
-                        html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#eff6ff; color:#1d4ed8; font-weight:600;">' + tkVal + '</td>';
+                        html += '<td class="tk-cell">' + tkVal + '</td>';
                     }
                     html += '</tr>';
                     rowIndex++;
                 }
             });
-            
+
             // Total række
-            html += '<tr style="background: #95a5a6; font-weight: bold;">';
-            html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Gennemsnit</td>';
-            html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + filtered.length + '</td>';
+            html += '<tr class="total-row">';
+            html += '<td>Gennemsnit</td>';
+            html += '<td>' + filtered.length + '</td>';
             var avgPrisM2 = Math.round(filtered.reduce((s, b) => s + (mode === 'leje' ? b.leje_m2 : b.pris_m2), 0) / filtered.length);
             var avgPrisTotal = Math.round(filtered.reduce((s, b) => s + (mode === 'leje' ? b.leje_maned : b.pris), 0) / filtered.length);
             var avgVarelser = (filtered.reduce((s, b) => s + b.varelser, 0) / filtered.length).toFixed(1);
-            html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgPrisM2.toLocaleString('da-DK') + ' kr.</td>';
-            html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgPrisTotal.toLocaleString('da-DK') + ' kr.</td>';
-            html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgVarelser + '</td>';
+            html += '<td>' + avgPrisM2.toLocaleString('da-DK') + ' kr.</td>';
+            html += '<td>' + avgPrisTotal.toLocaleString('da-DK') + ' kr.</td>';
+            html += '<td>' + avgVarelser + '</td>';
             if (mode === 'leje') {
                 var validForLiggedage = filtered.filter(b => b.liggedage);
                 var avgLiggedage = validForLiggedage.length > 0 ? Math.round(validForLiggedage.reduce((s, b) => s + b.liggedage, 0) / validForLiggedage.length) : '-';
-                html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">' + avgLiggedage + '</td>';
+                html += '<td>' + avgLiggedage + '</td>';
                 var validForTk = filtered.filter(b => b.leje_m2 && b.leje_m2 > 0);
                 var avgTurnkey = validForTk.length > 0 ? Math.round(validForTk.reduce((s, b) => s + calcTurnkey(b.leje_m2, tkOpex, tkYld), 0) / validForTk.length) : null;
                 var avgTkDisplay = avgTurnkey !== null ? avgTurnkey.toLocaleString('da-DK') + ' kr.' : '-';
-                html += '<td style="padding: 10px; border: 1px solid #ddd; text-align: center; background:#1e40af; color:#93c5fd;">' + avgTkDisplay + '</td>';
-                // Opdater KPI
+                html += '<td class="tk-cell-total">' + avgTkDisplay + '</td>';
                 if (avgTurnkey !== null) document.getElementById('tk-kpi').textContent = avgTurnkey.toLocaleString('da-DK');
             }
             html += '</tr>';
-            
             html += '</table>';
-            
+
             document.getElementById('table-plot').innerHTML = html;
         }
         
@@ -1813,8 +1790,8 @@ def generate_html(leje_data, ejer_data, output_path):
                             var tkM2    = calcTurnkey(bolig.leje_m2, opex, yld);
                             var tkTotal = Math.round(tkM2 * bolig.areal);
                             return '<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0;">'
-                                 + '<p style="color:#3b82f6;font-weight:700;">🏗️ Turnkey pr. m²: ' + tkM2.toLocaleString('da-DK') + ' kr.</p>'
-                                 + '<p style="color:#3b82f6;font-weight:700;">🏗️ Turnkey total: ' + tkTotal.toLocaleString('da-DK') + ' kr.</p>';
+                                 + '<p style="color:#3b82f6;font-weight:700;">Turnkey pr. m²: ' + tkM2.toLocaleString('da-DK') + ' kr.</p>'
+                                 + '<p style="color:#3b82f6;font-weight:700;">Turnkey total: ' + tkTotal.toLocaleString('da-DK') + ' kr.</p>';
                         })()}
                     </div>`
                     : `<div class="info-box">
@@ -1893,35 +1870,35 @@ def generate_html(leje_data, ejer_data, output_path):
             window._ovByer  = byer;
             window._ovTyper = typer;
             
-            var s = 'font-size:10px;color:#95a5a6;margin-bottom:5px;font-weight:bold;text-transform:uppercase;';
-            var html = '<div style="font-size:12px;font-weight:bold;color:#2c3e50;margin-bottom:15px;">🎛️ Filtre</div>';
-            
+            var btnActive   = 'background:#3b82f6;color:white;border:1px solid #3b82f6;';
+            var btnInactive = 'background:#232e45;color:#8b9bb4;border:1px solid rgba(255,255,255,0.07);';
+            var btnBase     = 'padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;';
+            var labelStyle  = 'font-size:9px;color:#556070;margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
+            var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#556070;margin-bottom:15px;">Filtre</div>';
+
             // Vaerelser
-            html += '<div style="margin-bottom:12px;"><div style="' + s + '">Vaerelser</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+            html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Vaerelser</span><div style="display:flex;flex-wrap:wrap;gap:5px;">';
             vaerelser.forEach(function(v) {
-                var bg  = selectedFilters.varelser.includes(v) ? '#3498db' : '#ecf0f1';
-                var col = selectedFilters.varelser.includes(v) ? 'white'   : '#7f8c8d';
-                html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleV(' + v + ',' + num + ')">' + v + '</button>';
+                var st = selectedFilters.varelser.includes(v) ? btnActive : btnInactive;
+                html += '<button style="' + btnBase + st + '" onclick="ovToggleV(' + v + ',' + num + ')">' + v + '</button>';
             });
             html += '</div></div>';
-            
-            // By - referer til index i _ovByer array
-            html += '<div style="margin-bottom:12px;"><div style="' + s + '">By</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+
+            // By
+            html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">By</span><div style="display:flex;flex-wrap:wrap;gap:5px;">';
             byer.forEach(function(b, i) {
-                var bg  = selectedFilters.by.includes(b) ? '#3498db' : '#ecf0f1';
-                var col = selectedFilters.by.includes(b) ? 'white'   : '#7f8c8d';
-                html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleB(' + i + ',' + num + ')">' + b + '</button>';
+                var st = selectedFilters.by.includes(b) ? btnActive : btnInactive;
+                html += '<button style="' + btnBase + st + '" onclick="ovToggleB(' + i + ',' + num + ')">' + b + '</button>';
             });
             html += '</div></div>';
-            
-            // Type - referer til index i _ovTyper array
+
+            // Type
             if (typer.length > 0 && typer.length < 10) {
-                html += '<div style="margin-bottom:12px;"><div style="' + s + '">' + typeLabel + '</div><div style="display:flex;flex-wrap:wrap;gap:3px;">';
+                html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">' + typeLabel + '</span><div style="display:flex;flex-wrap:wrap;gap:5px;">';
                 typer.forEach(function(t, i) {
-                    var bg    = selectedFilters.type.includes(t) ? '#3498db' : '#ecf0f1';
-                    var col   = selectedFilters.type.includes(t) ? 'white'   : '#7f8c8d';
+                    var st    = selectedFilters.type.includes(t) ? btnActive : btnInactive;
                     var label = t.length > 18 ? t.substring(0, 16) + '...' : t;
-                    html += '<button style="background:' + bg + ';color:' + col + ';border:none;padding:3px 8px;border-radius:10px;font-size:10px;cursor:pointer;" onclick="ovToggleT(' + i + ',' + num + ')" title="' + t + '">' + label + '</button>';
+                    html += '<button style="' + btnBase + st + '" onclick="ovToggleT(' + i + ',' + num + ')" title="' + t + '">' + label + '</button>';
                 });
                 html += '</div></div>';
             }
@@ -1940,7 +1917,7 @@ def generate_html(leje_data, ejer_data, output_path):
                 html += '</div>';
             }
             
-            html += '<button style="width:100%;background:#e74c3c;color:white;border:none;padding:7px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold;margin-top:5px;" onclick="ovReset(' + num + ')">NULSTIL FILTRE</button>';
+            html += '<button style="width:100%;background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.35);padding:7px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;" onclick="ovReset(' + num + ')">Nulstil filtre</button>';
             
             container.innerHTML = html;
         }
@@ -2003,8 +1980,8 @@ def generate_html(leje_data, ejer_data, output_path):
         osmLayer.addTo(map);
         
         var baseMaps = {
-            '🗺️ Kort': osmLayer,
-            '🛰️ Satellit': L.layerGroup([satelliteLayer, labelsLayer])
+            'Kort': osmLayer,
+            'Satellit': L.layerGroup([satelliteLayer, labelsLayer])
         };
         
         L.control.layers(baseMaps, null, { position: 'bottomright', collapsed: false }).addTo(map);
@@ -2012,10 +1989,9 @@ def generate_html(leje_data, ejer_data, output_path):
         // Skjul Leaflet's eget layer control - vi bruger vores egen knap
         document.querySelector('.leaflet-control-layers').style.display = 'none';
         
-        // Sæt aktiv layer reference
         var currentBaseLayer = osmLayer;
         window._baseMaps = baseMaps;
-        window._currentBaseKey = '🗺️ Kort';
+        window._currentBaseKey = 'Kort';
         
         document.getElementById('map-toggle-btn').addEventListener('click', function() {
             var keys = Object.keys(window._baseMaps);
@@ -2023,7 +1999,7 @@ def generate_html(leje_data, ejer_data, output_path):
             map.removeLayer(window._baseMaps[window._currentBaseKey]);
             map.addLayer(window._baseMaps[nextKey]);
             window._currentBaseKey = nextKey;
-            this.textContent = nextKey === '🗺️ Kort' ? '🛰️ Satellit' : '🗺️ Kort';
+            this.textContent = nextKey === 'Kort' ? 'Satellit' : 'Kort';
         });
         
         // Initialiser charts
@@ -2097,7 +2073,7 @@ def generate_html(leje_data, ejer_data, output_path):
             div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #e74c3c;"></div><span>3 værelser</span></div>';
             div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #3498db;"></div><span>4 værelser</span></div>';
             div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #2ecc71;"></div><span>5 værelser</span></div>';
-            div.innerHTML += '<p style="margin-top: 10px; font-size: 12px; font-style: italic;">Punkt-størrelse = Pris/m2</p>';
+            div.innerHTML += '<p style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">Punkt-størrelse = Pris/m²</p>';
             return div;
         };
         legend.addTo(map);
