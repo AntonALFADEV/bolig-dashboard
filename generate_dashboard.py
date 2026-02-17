@@ -876,8 +876,8 @@ def generate_html(leje_data, ejer_data, output_path):
             transition: all 0.15s ease;
         }
         .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
-        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #e4e7ec; }
-        .overlay-chart-inner { flex: 1; background: #f0f2f5; border-radius: 8px; overflow: auto; }
+        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #e4e7ec; min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: #f0f2f5; border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -1108,8 +1108,8 @@ def generate_html(leje_data, ejer_data, output_path):
         <div class="overlay-inner" onclick="event.stopPropagation()">
             <div class="overlay-filters" id="overlay-filters-1"></div>
             <div class="overlay-chart">
-                <div class="overlay-chart-inner">
-                    <div id="scatter-plot" style="width:100%; height:100%;"></div>
+                <div class="overlay-chart-inner" style="display:flex; flex-direction:column;">
+                    <div id="scatter-plot" style="width:100%; flex:1; min-height:500px;"></div>
                 </div>
             </div>
         </div>
@@ -1120,8 +1120,8 @@ def generate_html(leje_data, ejer_data, output_path):
         <div class="overlay-inner" onclick="event.stopPropagation()">
             <div class="overlay-filters" id="overlay-filters-2"></div>
             <div class="overlay-chart">
-                <div class="overlay-chart-inner">
-                    <div id="heatmap-plot" style="width:100%; height:100%;"></div>
+                <div class="overlay-chart-inner" style="display:flex; flex-direction:column;">
+                    <div id="heatmap-plot" style="width:100%; flex:1; min-height:500px;"></div>
                 </div>
             </div>
         </div>
@@ -1193,6 +1193,8 @@ def generate_html(leje_data, ejer_data, output_path):
             
             var layout = {
                 paper_bgcolor: '#f0f2f5', plot_bgcolor: '#ffffff',
+                autosize: true,
+                height: 580,
                 font: { family: 'Inter, sans-serif', color: '#374151' },
                 title: {
                     text: mode === 'leje' ? 
@@ -1280,6 +1282,8 @@ def generate_html(leje_data, ejer_data, output_path):
             
             var layout = {
                 paper_bgcolor: '#f0f2f5', plot_bgcolor: '#f0f2f5',
+                autosize: true,
+                height: 580,
                 font: { family: 'Inter, sans-serif', color: '#374151' },
                 title: {
                     text: mode === 'leje' ?
@@ -1925,10 +1929,17 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         
         // Wrapper funktioner - undgår quote-kollision i onclick attributter
-        function ovToggleV(v, num)  { toggleFilter('varelser', v);              renderOverlayFilters(num); }
-        function ovToggleB(i, num)  { toggleFilter('by', window._ovByer[i]);    renderOverlayFilters(num); }
-        function ovToggleT(i, num)  { toggleFilter('type', window._ovTyper[i]); renderOverlayFilters(num); }
-        function ovReset(num)       { resetFilters();                            renderOverlayFilters(num); }
+        function ovUpdateChart(num) {
+            var filtered = applyFilters(allBoliger);
+            if (num === '1' || num === 1) { createScatterPlot(filtered); }
+            else if (num === '2' || num === 2) { createHeatmap(filtered); }
+            else if (num === '3' || num === 3) { createTable(filtered); }
+            updateThumbnails();
+        }
+        function ovToggleV(v, num)  { toggleFilter('varelser', v);              renderOverlayFilters(num); ovUpdateChart(num); }
+        function ovToggleB(i, num)  { toggleFilter('by', window._ovByer[i]);    renderOverlayFilters(num); ovUpdateChart(num); }
+        function ovToggleT(i, num)  { toggleFilter('type', window._ovTyper[i]); renderOverlayFilters(num); ovUpdateChart(num); }
+        function ovReset(num)       { resetFilters();                            renderOverlayFilters(num); ovUpdateChart(num); }
         function ovYearMin(v, num)  { updateYearFromOverlay(v, 'min', num); }
         function ovYearMax(v, num)  { updateYearFromOverlay(v, 'max', num); }
 
@@ -1991,10 +2002,10 @@ def generate_html(leje_data, ejer_data, output_path):
                 var maxYear = Math.max(...aar);
                 var curMin  = selectedFilters.aarMin !== null ? selectedFilters.aarMin : minYear;
                 var curMax  = selectedFilters.aarMax !== null ? selectedFilters.aarMax : maxYear;
-                html += '<div style="margin-bottom:12px;"><div style="' + s + '">Opf. aar</div>';
-                html += '<div style="font-size:11px;margin-bottom:2px;">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
+                html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Opf. år</span>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:var(--text-secondary);">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMin + '" style="width:100%;margin:2px 0;" oninput="ovYearMin(this.value,' + num + ')">';
-                html += '<div style="font-size:11px;margin-bottom:2px;">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:var(--text-secondary);">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMax + '" style="width:100%;margin:2px 0;" oninput="ovYearMax(this.value,' + num + ')">';
                 html += '</div>';
             }
@@ -2023,9 +2034,32 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function openOverlay(overlayId) {
             var num = overlayId.replace('overlay', '');
-            document.getElementById(overlayId).style.display = "flex";
+            document.getElementById(overlayId).style.display = 'flex';
             renderOverlayFilters(num);
-            updateInteractiveCharts();
+
+            var filtered = applyFilters(allBoliger);
+            if (num === '1') {
+                createScatterPlot(filtered);
+                // Trigger resize efter overlay er fuldt synligt
+                setTimeout(function() {
+                    var el = document.getElementById('scatter-plot');
+                    if (el) Plotly.relayout('scatter-plot', {
+                        width: el.offsetWidth,
+                        height: Math.max(el.offsetHeight, 550)
+                    });
+                }, 80);
+            } else if (num === '2') {
+                createHeatmap(filtered);
+                setTimeout(function() {
+                    var el = document.getElementById('heatmap-plot');
+                    if (el) Plotly.relayout('heatmap-plot', {
+                        width: el.offsetWidth,
+                        height: Math.max(el.offsetHeight, 550)
+                    });
+                }, 80);
+            } else if (num === '3') {
+                createTable(filtered);
+            }
         }
         
         function closeOverlay(overlayId) {
