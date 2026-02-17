@@ -299,7 +299,7 @@ def process_leje_data(excel_path):
     if 'Dato' in df.columns:
         df['_dato'] = pd.to_datetime(df['Dato'], dayfirst=True, errors='coerce')
         df['_dato_str'] = df['_dato'].dt.strftime('%Y-%m-%d')
-        df['_dato_ts']  = df['_dato'].astype('int64') // 10**9  # Unix timestamp i sekunder
+        df['_dato_ts']  = df['_dato'].apply(lambda x: int(x.timestamp()) if pd.notna(x) else None)
     else:
         df['_dato_str'] = None
         df['_dato_ts']  = None
@@ -440,7 +440,7 @@ def process_ejer_data(excel_path):
     df['By']         = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
     df['_dato']      = pd.to_datetime(df['Handelsdato'], errors='coerce')
     df['Handelsdato_str'] = df['_dato'].dt.strftime('%Y-%m-%d')
-    df['_dato_ts']   = df['_dato'].astype('int64') // 10**9
+    df['_dato_ts']   = df['_dato'].apply(lambda x: int(x.timestamp()) if pd.notna(x) else None)
 
     # Konverter typer sikkert
     df['Antal Værelser'] = pd.to_numeric(df['Antal Værelser'], errors='coerce')
@@ -815,7 +815,23 @@ def generate_html(leje_data, ejer_data, output_path):
     
     
     <!-- Year Range Slider -->
-    <div id="year-slider-container" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 400px;">
+    <div id="sliders-wrapper" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; flex-direction: column; gap: 10px; align-items: center;">
+    <div id="dato-slider-container" style="display: none; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 400px;">
+        <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
+            📅 <span id="dato-slider-label">DATO</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="flex: 1;">
+                <input type="range" id="dato-slider-min" style="width: 100%; margin: 4px 0;">
+                <input type="range" id="dato-slider-max" style="width: 100%; margin: 4px 0;">
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">
+            <span>Fra: <span id="dato-value-min">-</span></span>
+            <span>Til: <span id="dato-value-max">-</span></span>
+        </div>
+    </div>
+    <div id="year-slider-container" style="display: none; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 400px;">
         <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
             🏗️ OPFØRELSESÅR
         </div>
@@ -835,21 +851,6 @@ def generate_html(leje_data, ejer_data, output_path):
             <span>Til: <span id="year-value-max">2025</span></span>
         </div>
     </div>
-
-    <div id="dato-slider-container" style="display: none; position: fixed; bottom: 20px; left: calc(50% + 420px); transform: translateX(-50%); z-index: 1000; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); min-width: 340px;">
-        <div style="font-weight: bold; font-size: 12px; color: #2c3e50; margin-bottom: 10px; text-align: center;">
-            📅 <span id="dato-slider-label">DATO</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="flex: 1;">
-                <input type="range" id="dato-slider-min" style="width: 100%; margin: 4px 0;">
-                <input type="range" id="dato-slider-max" style="width: 100%; margin: 4px 0;">
-            </div>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">
-            <span>Fra: <span id="dato-value-min">-</span></span>
-            <span>Til: <span id="dato-value-max">-</span></span>
-        </div>
     </div>
     
     <!-- Thumbnails -->
@@ -1349,11 +1350,6 @@ def generate_html(leje_data, ejer_data, output_path):
                 selectedFilters.datoMin = selectedFilters.datoMin !== null ? selectedFilters.datoMin : minTs;
                 selectedFilters.datoMax = selectedFilters.datoMax !== null ? selectedFilters.datoMax : maxTs;
 
-                function tsToLabel(ts) {
-                    var d = new Date(ts * 1000);
-                    return d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
-                }
-
                 document.getElementById('dato-slider-container').style.display = 'block';
                 document.getElementById('dato-slider-label').textContent = currentMode === 'leje' ? 'UDLEJNINGSDATO' : 'HANDELSDATO';
                 document.getElementById('dato-slider-min').min = minTs;
@@ -1367,6 +1363,16 @@ def generate_html(leje_data, ejer_data, output_path):
             } else {
                 document.getElementById('dato-slider-container').style.display = 'none';
             }
+
+            // Vis/skjul wrapper
+            var anySlider = document.getElementById('year-slider-container').style.display === 'block' ||
+                            document.getElementById('dato-slider-container').style.display === 'block';
+            document.getElementById('sliders-wrapper').style.display = anySlider ? 'flex' : 'none';
+        }
+
+        function tsToLabel(ts) {
+            var d = new Date(ts * 1000);
+            return d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
         }
         
         function toggleFilter(type, value) {
