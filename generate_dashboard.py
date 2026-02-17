@@ -742,6 +742,101 @@ def generate_html(leje_data, ejer_data, output_path):
             background: #1e293b !important;
             border-right: 1px solid rgba(255,255,255,0.08) !important;
         }
+
+        /* Turnkey flydende panel */
+        #turnkey-toggle {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1001;
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            transition: all 0.18s ease;
+            display: none;
+        }
+        #turnkey-toggle:hover {
+            background: #334155;
+            border-color: rgba(255,255,255,0.2);
+        }
+        #turnkey-toggle.open {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        #turnkey-panel {
+            position: fixed;
+            top: 112px;
+            right: 20px;
+            z-index: 1000;
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            width: 220px;
+            display: none;
+        }
+        #turnkey-panel .tk-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            display: block;
+        }
+        #turnkey-panel input[type=number] {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #0f172a;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            box-sizing: border-box;
+            margin-bottom: 14px;
+            background: #f1f5f9;
+        }
+        #turnkey-panel input[type=number]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+        }
+        #turnkey-panel .tk-result {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            margin-top: 4px;
+        }
+        #turnkey-panel .tk-result-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        #turnkey-panel .tk-result-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #3b82f6;
+            line-height: 1;
+        }
+        #turnkey-panel .tk-result-unit {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
         
         /* Overlay filter panel */
         .overlay-filters {
@@ -917,27 +1012,28 @@ def generate_html(leje_data, ejer_data, output_path):
         <button class="mode-btn" onclick="switchMode('ejer')">Ejerboliger</button>
         <div style="width:1px; background:#ecf0f1; margin:6px 4px;"></div>
         <button class="mode-btn" id="map-toggle-btn" style="color:#7f8c8d;">🛰️ Satellit</button>
-        <div id="turnkey-inputs" style="display:none; align-items:center; gap:8px; margin-left:8px; padding-left:8px; border-left:1px solid rgba(255,255,255,0.15);">
-            <span style="font-size:10px; font-weight:700; letter-spacing:0.08em; color:#94a3b8;">TURNKEY</span>
-            <div style="display:flex; align-items:center; gap:4px;">
-                <label style="font-size:10px; color:#94a3b8;">OPEX</label>
-                <input id="tk-opex" type="number" value="350" min="0" step="10"
-                    style="width:70px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; padding:4px 7px; font-size:11px; font-weight:600; text-align:center;"
-                    oninput="updateTurnkey()">
-                <span style="font-size:10px; color:#64748b;">kr/m²</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:4px;">
-                <label style="font-size:10px; color:#94a3b8;">AFKAST</label>
-                <input id="tk-yield" type="number" value="4" min="0.1" max="20" step="0.1"
-                    style="width:55px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#e2e8f0; border-radius:6px; padding:4px 7px; font-size:11px; font-weight:600; text-align:center;"
-                    oninput="updateTurnkey()">
-                <span style="font-size:10px; color:#64748b;">%</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:4px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); border-radius:6px; padding:4px 10px;">
-                <span style="font-size:10px; color:#94a3b8;">GNS.</span>
-                <span id="tk-kpi" style="font-size:12px; font-weight:700; color:#3b82f6;">-</span>
-                <span style="font-size:10px; color:#64748b;">kr/m²</span>
-            </div>
+    </div>
+
+    <!-- Turnkey toggle knap -->
+    <button id="turnkey-toggle" onclick="toggleTurnkeyPanel()">🏗️ TURNKEY</button>
+
+    <!-- Turnkey flydende panel -->
+    <div id="turnkey-panel">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#e2e8f0; margin-bottom:16px; text-align:center;">🏗️ TURNKEY BEREGNING</div>
+
+        <span class="tk-label">OPEX (kr/m²/år)</span>
+        <input id="tk-opex" type="number" value="350" min="0" step="10" oninput="updateTurnkey()">
+
+        <span class="tk-label">AFKASTKRAV (%)</span>
+        <input id="tk-yield" type="number" value="4" min="0.1" max="20" step="0.1" oninput="updateTurnkey()">
+
+        <div class="tk-result">
+            <div class="tk-result-label">Gns. Turnkey pr. m²</div>
+            <div class="tk-result-value" id="tk-kpi">-</div>
+            <div class="tk-result-unit">kr/m²</div>
+        </div>
+        <div style="font-size:9px; color:#475569; margin-top:10px; text-align:center; line-height:1.5;">
+            (Leje/m² − OPEX) ÷ Afkastkrav
         </div>
     </div>
     
@@ -1350,6 +1446,14 @@ def generate_html(leje_data, ejer_data, output_path):
             return Math.round((lejeM2 - opex) / (yieldPct / 100));
         }
 
+        function toggleTurnkeyPanel() {
+            var panel = document.getElementById('turnkey-panel');
+            var btn = document.getElementById('turnkey-toggle');
+            var isOpen = panel.style.display === 'block';
+            panel.style.display = isOpen ? 'none' : 'block';
+            btn.classList.toggle('open', !isOpen);
+        }
+
         function updateTurnkey() {
             if (currentMode !== 'leje') return;
             var opex  = parseFloat(document.getElementById('tk-opex').value)  || 0;
@@ -1376,8 +1480,12 @@ def generate_html(leje_data, ejer_data, output_path):
             });
             event.target.classList.add('active');
 
-            // Vis/skjul turnkey panel
-            document.getElementById('turnkey-inputs').style.display = mode === 'leje' ? 'flex' : 'none';
+            // Vis/skjul turnkey knap og luk panel ved mode-skift
+            var tkToggle = document.getElementById('turnkey-toggle');
+            var tkPanel  = document.getElementById('turnkey-panel');
+            tkToggle.style.display = mode === 'leje' ? 'block' : 'none';
+            tkPanel.style.display  = 'none';
+            tkToggle.classList.remove('open');
             
             var data = mode === 'leje' ? lejeData : ejerData;
             map.setView([data.center_lat, data.center_lng], 13);
@@ -2047,8 +2155,8 @@ def generate_html(leje_data, ejer_data, output_path):
         updateFilterContent();
         updateDisplay();
         updateThumbnails();
-        // Vis turnkey panel (leje er default)
-        document.getElementById('turnkey-inputs').style.display = 'flex';
+        // Vis turnkey knap (leje er default)
+        document.getElementById('turnkey-toggle').style.display = 'block';
         
         setTimeout(function() { map.invalidateSize(); }, 100);
     </script>
