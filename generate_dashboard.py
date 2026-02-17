@@ -386,37 +386,63 @@ def process_ejer_data(excel_path):
     # Læs Stamdata
     df = pd.read_excel(excel_path, sheet_name='Stamdata')
 
-    # Merge Enheder
+    # Merge Enheder - find kolonner fleksibelt
     df_enheder = pd.read_excel(excel_path, sheet_name='Enheder')
-    df = df.merge(
-        df_enheder[['Handels-ID', 'Antal værelser', 'Latitude', 'Longitude']],
-        on='Handels-ID', how='left'
-    )
-    df['Antal Værelser'] = df['Antal værelser']
-    df['lat'] = df['Latitude']
-    df['lng'] = df['Longitude']
+    
+    # Find Antal værelser kolonnen (forskellig stavemåde)
+    vaerelser_col = None
+    for name in ['Antal værelser', 'Antal Værelser', 'AntalVærelser', 'Antal vaerelser', 'Antal Vaerelser', 'Rooms', 'Værelser']:
+        if name in df_enheder.columns:
+            vaerelser_col = name
+            break
+    
+    # Find koordinat kolonner (forskellig stavemåde)
+    lat_col = next((c for c in df_enheder.columns if c.lower() in ['latitude', 'lat', 'breddegrad']), None)
+    lng_col = next((c for c in df_enheder.columns if c.lower() in ['longitude', 'lng', 'lon', 'længdegrad', 'laengdegrad']), None)
+    
+    merge_cols = ['Handels-ID']
+    if vaerelser_col: merge_cols.append(vaerelser_col)
+    if lat_col:       merge_cols.append(lat_col)
+    if lng_col:       merge_cols.append(lng_col)
+    
+    df = df.merge(df_enheder[merge_cols], on='Handels-ID', how='left')
+    
+    # Normaliser kolonnenavne
+    df['Antal Værelser'] = df[vaerelser_col] if vaerelser_col else None
+    df['lat'] = df[lat_col] if lat_col else None
+    df['lng'] = df[lng_col] if lng_col else None
 
     # Merge Ejendomme (valgfri)
     if 'Ejendomme' in excel_file.sheet_names:
         df_ejendomme = pd.read_excel(excel_path, sheet_name='Ejendomme')
-        df = df.merge(
-            df_ejendomme[['Handels-ID', 'Opførelsesår']],
-            on='Handels-ID', how='left'
-        )
+        aar_col = next((c for c in df_ejendomme.columns if 'opf' in c.lower() or 'bygge' in c.lower() or 'år' in c.lower()), None)
+        if aar_col:
+            df = df.merge(df_ejendomme[['Handels-ID', aar_col]], on='Handels-ID', how='left')
+            if aar_col != 'Opførelsesår':
+                df['Opførelsesår'] = df[aar_col]
+        else:
+            df['Opførelsesår'] = None
     else:
         df['Opførelsesår'] = None
 
-    # Anvend kolonne-aliaser
-    df['Enhedsareal']               = df['Enhedsareal']
-    df['Pris pr. m2 (enhedsareal)'] = df['Pris pr. m2 (enhedsareal)']
-    df['Handelsnavn']               = df['Handelsnavn']
-    df['Handelsdato']               = df['Handelsdato']
-    df['Pris']                      = df['Pris']
-    df['Anvendelse']                = df['Anvendelse'] if 'Anvendelse' in df.columns else 'Ikke angivet'
-
-    df['By']            = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
+    df['Anvendelse'] = df['Anvendelse'] if 'Anvendelse' in df.columns else 'Ikke angivet'
+    df['By']         = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
     df['Handelsdato_str'] = pd.to_datetime(df['Handelsdato']).dt.strftime('%Y-%m-%d')
-    
+
+    # Rens data FØRST - fjern rækker med manglende vigtige data
+    original_count = len(df)
+    required = ['Handelsnavn', 'By', 'lat', 'lng', 'Enhedsareal', 'Pris', 'Pris pr. m2 (enhedsareal)', 'Antal Værelser']
+    df = df.dropna(subset=required)
+    dropped = original_count - len(df)
+    if dropped > 0:
+        print(f"   ⚠️  Fjernet {dropped} rækker med manglende data")
+
+    # Konverter typer
+    df['Antal Værelser'] = df['Antal Værelser'].astype(int)
+    df['Enhedsareal']    = df['Enhedsareal'].astype(int)
+    df['Pris']           = df['Pris'].astype(int)
+    df['Pris pr. m2 (enhedsareal)'] = df['Pris pr. m2 (enhedsareal)'].astype(int)
+
     # Generer grafer
     print("   Genererer scatter plot...")
     scatter_img = create_scatter_plot(df, mode='ejer')
@@ -424,13 +450,6 @@ def process_ejer_data(excel_path):
     heatmap_img = create_heatmap(df, mode='ejer')
     print("   Genererer tabel...")
     table_img = create_summary_table(df, mode='ejer')
-    
-    # Rens data - fjern rækker med manglende vigtige data
-    original_count = len(df)
-    df = df.dropna(subset=['Handelsnavn', 'By', 'lat', 'lng', 'Enhedsareal', 'Pris', 'Pris pr. m2 (enhedsareal)', 'Antal Værelser'])
-    dropped = original_count - len(df)
-    if dropped > 0:
-        print(f"   ⚠️  Fjernet {dropped} rækker med manglende data")
     
     # Konverter til dictionary
     boliger = []
