@@ -13,6 +13,7 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 import numpy as np
 from datetime import datetime
@@ -176,7 +177,10 @@ def create_heatmap(df, mode='leje'):
     pivot_matrix = pivot.pivot(index='Areal kategori', columns=room_col, values='mean')
     count_matrix = pivot.pivot(index='Areal kategori', columns=room_col, values='count')
 
-    sns.heatmap(pivot_matrix, annot=False, cmap='Blues',
+    grey_to_blue = LinearSegmentedColormap.from_list(
+        'grey_blue', ['#c8cdd4', '#a8b4c2', '#7090b0', '#3d6fa0', '#1a4f8a']
+    )
+    sns.heatmap(pivot_matrix, annot=False, cmap=grey_to_blue,
                 ax=ax, cbar_kws={'label': label, 'shrink': 0.8},
                 linewidths=2, linecolor='#f0f2f5')
 
@@ -185,8 +189,13 @@ def create_heatmap(df, mode='leje'):
             value = pivot_matrix.iloc[i, j]
             count = count_matrix.iloc[i, j]
             if not pd.isna(value):
+                # Normaliser og vælg tekstfarve
+                vmin = pivot_matrix.min().min()
+                vmax = pivot_matrix.max().max()
+                norm = (value - vmin) / (vmax - vmin + 1e-9)
+                txt_color = 'white' if norm > 0.55 else '#1a1d23'
                 ax.text(j + 0.5, i + 0.5, f'{int(value)}\n(n={int(count)})',
-                       ha='center', va='center', fontsize=10, fontweight='600', color='#1a1d23')
+                       ha='center', va='center', fontsize=10, fontweight='600', color=txt_color)
 
     ax.set_xlabel('Antal værelser', fontsize=11, color='#374151')
     ax.set_ylabel('Areal kategori', fontsize=11, color='#374151')
@@ -584,11 +593,11 @@ def generate_html(leje_data, ejer_data, output_path):
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --bg-panel:     #f0f2f5;
-            --bg-panel-2:   #e4e7ec;
-            --bg-panel-3:   #d4d8e0;
-            --border:       rgba(0,0,0,0.08);
-            --border-hi:    rgba(0,0,0,0.15);
+            --bg-panel:     rgba(255,255,255,0.20);
+            --bg-panel-2:   rgba(255,255,255,0.13);
+            --bg-panel-3:   rgba(0,0,0,0.08);
+            --border:       rgba(0,0,0,0.09);
+            --border-hi:    rgba(0,0,0,0.17);
             --text-primary: #1a1d23;
             --text-secondary: #4b5563;
             --text-muted:   #8b95a3;
@@ -614,6 +623,8 @@ def generate_html(leje_data, ejer_data, output_path):
             transform: translateX(-50%);
             z-index: 1001;
             background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-hi);
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.5);
@@ -651,6 +662,8 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .bi-box {
             background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
@@ -752,6 +765,8 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1001;
             background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-hi);
             color: var(--text-secondary);
             padding: 7px 14px;
@@ -775,6 +790,8 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1000;
             background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 16px 18px;
@@ -851,6 +868,8 @@ def generate_html(leje_data, ejer_data, output_path):
         .overlay-filters {
             width: 210px; flex-shrink: 0;
             background: var(--bg-panel) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-right: 1px solid var(--border) !important;
             padding: 16px; overflow-y: auto;
         }
@@ -876,8 +895,8 @@ def generate_html(leje_data, ejer_data, output_path):
             transition: all 0.15s ease;
         }
         .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
-        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #e4e7ec; min-height: 0; }
-        .overlay-chart-inner { flex: 1; background: #f0f2f5; border-radius: 8px; overflow: auto; min-height: 0; }
+        .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: rgba(0,0,0,0.15); min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.20); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -889,6 +908,8 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Map popups & legend ─────────────────────── */
         .info-box {
             padding: 14px; background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-hi);
             border-radius: 8px; color: var(--text-primary);
             font-family: 'Inter', sans-serif;
@@ -902,6 +923,8 @@ def generate_html(leje_data, ejer_data, output_path):
         .legend {
             padding: 10px 12px;
             background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
@@ -914,9 +937,15 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Sliders ─────────────────────────────────── */
         #sliders-wrapper > div {
             background: var(--bg-panel) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
             border: 1px solid var(--border) !important;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
+        }
+        #dato-slider-container, #year-slider-container {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
         input[type=range] {
             -webkit-appearance: none; appearance: none;
@@ -948,9 +977,9 @@ def generate_html(leje_data, ejer_data, output_path):
         .thumbnail {
             width: 148px; height: 98px; cursor: pointer;
             border-radius: 8px; overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-            transition: all 0.2s; opacity: 0.65;
-            border: 1px solid var(--border-hi);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+            transition: all 0.2s; opacity: 0.80;
+            border: 1px solid rgba(255,255,255,0.35);
         }
         .thumbnail:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
         .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
@@ -1273,7 +1302,13 @@ def generate_html(leje_data, ejer_data, output_path):
                 x: roomNumbers.map(r => r + ' vær.'),
                 y: categories,
                 type: 'heatmap',
-                colorscale: 'Blues',
+                colorscale: [
+                    [0.0,  '#c8cdd4'],
+                    [0.25, '#a8b4c2'],
+                    [0.5,  '#7090b0'],
+                    [0.75, '#3d6fa0'],
+                    [1.0,  '#1a4f8a']
+                ],
                 text: textValues,
                 hovertemplate: '%{y}<br>%{x}<br>%{text}<extra></extra>',
                 showscale: true,
@@ -1296,15 +1331,23 @@ def generate_html(leje_data, ejer_data, output_path):
                 annotations: []
             };
             
+            // Byg annotations med auto-farve (sort på lyse, hvid på mørke celler)
+            var allVals = zValues.flat().filter(v => v !== null);
+            var minVal = allVals.length ? Math.min(...allVals) : 0;
+            var maxVal = allVals.length ? Math.max(...allVals) : 1;
+            layout.annotations = [];
             for (var i = 0; i < categories.length; i++) {
                 for (var j = 0; j < roomNumbers.length; j++) {
                     if (zValues[i][j] !== null) {
+                        // Normaliser 0-1 og brug tærskel på 0.55 til at vælge tekstfarve
+                        var norm = (zValues[i][j] - minVal) / (maxVal - minVal || 1);
+                        var txtColor = norm > 0.55 ? '#ffffff' : '#1a1d23';
                         layout.annotations.push({
                             x: roomNumbers[j] + ' vær.',
                             y: categories[i],
                             text: textValues[i][j].replace('<br>', '\\n'),
                             showarrow: false,
-                            font: { size: 11, color: '#1a1d23', family: 'Inter, sans-serif' }
+                            font: { size: 11, color: txtColor, family: 'Inter, sans-serif' }
                         });
                     }
                 }
@@ -1491,7 +1534,7 @@ def generate_html(leje_data, ejer_data, output_path):
             });
             Plotly.newPlot('thumb-render-2', [{
                 z:zData, x:rooms.map(r=>r+' vær.'), y:yLabels,
-                type:'heatmap', colorscale:'Blues', showscale:false,
+                type:'heatmap', colorscale:[[0,'#c8cdd4'],[0.25,'#a8b4c2'],[0.5,'#7090b0'],[0.75,'#3d6fa0'],[1,'#1a4f8a']], showscale:false,
                 text:zData, texttemplate:'%{z}', textfont:{size:9, color:'#1a1d23'}
             }], layout, {staticPlot:true, responsive:false})
                 .then(function() {
