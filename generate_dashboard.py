@@ -224,12 +224,15 @@ def create_summary_table(df, mode='leje'):
     
     summary.columns = cols
     
-    # Format values
-    summary[f'Leje pr. m²' if mode == 'leje' else 'Pris pr. m²'] = summary[f'Leje pr. m²' if mode == 'leje' else 'Pris pr. m²'].apply(lambda x: f'{int(x)} kr.')
-    summary[f'Leje pr. måned' if mode == 'leje' else 'Pris'] = summary[f'Leje pr. måned' if mode == 'leje' else 'Pris'].apply(lambda x: f'{int(x):,} kr.'.replace(',', '.'))
-    summary['Antal værelser'] = summary['Antal værelser'].apply(lambda x: f'{x:.1f}')
+    # Format values - med NaN beskyttelse
+    pris_m2_col = 'Leje pr. m²' if mode == 'leje' else 'Pris pr. m²'
+    pris_col    = 'Leje pr. måned' if mode == 'leje' else 'Pris'
+    
+    summary[pris_m2_col] = summary[pris_m2_col].apply(lambda x: f'{int(x)} kr.' if pd.notna(x) else '-')
+    summary[pris_col]    = summary[pris_col].apply(lambda x: f'{int(x):,} kr.'.replace(',', '.') if pd.notna(x) else '-')
+    summary['Antal værelser'] = summary['Antal værelser'].apply(lambda x: f'{x:.1f}' if pd.notna(x) else '-')
     if mode == 'leje':
-        summary['Liggetid (dage)'] = summary['Liggetid (dage)'].apply(lambda x: f'{int(x)}')
+        summary['Liggetid (dage)'] = summary['Liggetid (dage)'].apply(lambda x: f'{int(x)}' if pd.notna(x) else '-')
     
     # Tilføj total række
     total_row = {
@@ -277,65 +280,20 @@ def create_summary_table(df, mode='leje'):
     return f"data:image/png;base64,{img_base64}"
 
 def process_leje_data(excel_path):
-    """Læser og behandler lejedata fra Excel"""
+    """Læser og behandler lejedata - hardcodede kolonnenavne"""
     try:
         df = pd.read_excel(excel_path, sheet_name='Worksheet')
     except:
         df = pd.read_excel(excel_path)
-    
-    # Find kolonnenavne
-    address_col = find_column(df, ['Adresse', 'Address'])
-    city_col = find_column(df, ['By', 'City', 'Postnr.'])
-    lat_col = find_column(df, ['Lat', 'Latitude'])
-    lng_col = find_column(df, ['Lng', 'Lon', 'Longitude'])
-    area_col = find_column(df, ['Areal', 'Area'])
-    price_m2_col = find_column(df, ['Leje/m2', 'Leje pr. m2'])
-    yearly_rent_col = find_column(df, ['Årsleje', 'Arsleje', 'Yearly rent'])
-    days_col = find_column(df, ['Liggedage', 'Days on market'])
-    rooms_col = find_column(df, ['Antal værelser', 'Antal Værelser', 'Værelser', 'Rooms'])
-    
-    # Find nye filter-kolonner (optional)
-    year_col = None
-    for col_name in ['Opførelsesår', 'Opfoerelsesaar', 'Byggeår', 'Year built']:
-        if col_name in df.columns:
-            year_col = col_name
-            break
-    
-    type_col = None
-    for col_name in ['Boligtype', 'Type', 'Property type']:
-        if col_name in df.columns:
-            type_col = col_name
-            break
-    
-    # Standardiser kolonnenavne
-    df['Adresse'] = df[address_col]
-    df['By'] = df[city_col]
-    df['Lat'] = df[lat_col]
-    df['Lng'] = df[lng_col]
-    df['Areal'] = df[area_col]
-    df['Leje/m2'] = df[price_m2_col]
-    df['Årsleje'] = df[yearly_rent_col]
-    df['Liggedage'] = df[days_col]
-    df['Antal værelser'] = df[rooms_col]
-    
-    # Tilføj nye kolonner hvis de findes
-    if year_col:
-        df['Opførelsesår'] = df[year_col]
-        print(f"   ✅ Opførelsesår tilføjet fra kolonne: {year_col}")
-    else:
-        df['Opførelsesår'] = None
-        print(f"   ⚠️  Opførelsesår ikke fundet i data")
-    
-    if type_col:
-        df['Boligtype'] = df[type_col]
-        print(f"   ✅ Boligtype tilføjet fra kolonne: {type_col}")
-    else:
-        df['Boligtype'] = 'Ikke angivet'
-        print(f"   ⚠️  Boligtype ikke fundet - bruger 'Ikke angivet'")
-    
-    # Beregn månedlig leje
-    if 'Leje/måned' not in df.columns:
-        df['Leje/måned'] = df['Årsleje'] / 12
+
+    # Hardcodede kolonnenavne - disse skal matche dine Excel-filer
+    # Lejedata kolonner:
+    # Adresse, By, Lat, Lng, Areal, Leje/m2, Årsleje, Liggedage, Antal værelser
+    # Valgfrit: Opførelsesår, Boligtype
+
+    df['Opførelsesår'] = df['Opførelsesår'] if 'Opførelsesår' in df.columns else None
+    df['Boligtype']    = df['Boligtype']    if 'Boligtype'    in df.columns else 'Ikke angivet'
+    df['Leje/måned']   = df['Årsleje'] / 12
     
     # Generer grafer
     print("   Genererer scatter plot...")
@@ -416,168 +374,48 @@ def find_column(df, possible_names):
     raise KeyError(f"Kunne ikke finde nogen af disse kolonner: {possible_names}")
 
 def process_ejer_data(excel_path):
-    """Læser og behandler ejerdata fra Excel"""
+    """Læser og behandler ejerdata - hardcodede kolonnenavne"""
     
-    # Tjek om filen har flere sheets
+    # Stamdata: Handels-ID, Handelsnavn, Handelsdato, Pris, Enhedsareal,
+    #           Pris pr. m2 (enhedsareal), Anvendelse
+    # Enheder:  Handels-ID, Antal værelser, Latitude, Longitude
+    # Ejendomme (valgfri): Handels-ID, Opførelsesår
+
     excel_file = pd.ExcelFile(excel_path)
-    print(f"   📑 Faner i filen: {excel_file.sheet_names}")
-    
-    # Læs fra første sheet (Stamdata eller hoveddata)
-    df = pd.read_excel(excel_path, sheet_name=0)
-    
-    # Hvis der er en 'Enheder' fane, merge den for at få Antal værelser
-    if 'Enheder' in excel_file.sheet_names:
-        print(f"   🔗 Merger med 'Enheder' fane...")
-        df_enheder = pd.read_excel(excel_path, sheet_name='Enheder')
-        
-        # Find værelses-kolonnen (kan hedde lidt forskelligt)
-        rooms_col_enheder = None
-        for col_name in ['Antal værelser', 'Antal Værelser', 'Værelser']:
-            if col_name in df_enheder.columns:
-                rooms_col_enheder = col_name
-                break
-        
-        # Find koordinat-kolonner i Enheder fanen
-        lat_col_enheder = None
-        lng_col_enheder = None
-        for col_name in ['Latitude', 'Lat', 'latitude']:
-            if col_name in df_enheder.columns:
-                lat_col_enheder = col_name
-                break
-        for col_name in ['Longitude', 'Lng', 'Lon', 'longitude']:
-            if col_name in df_enheder.columns:
-                lng_col_enheder = col_name
-                break
-        
-        if 'Handels-ID' in df_enheder.columns and 'Handels-ID' in df.columns:
-            # Byg liste af kolonner at merge
-            merge_cols = ['Handels-ID']
-            if rooms_col_enheder:
-                merge_cols.append(rooms_col_enheder)
-            if lat_col_enheder:
-                merge_cols.append(lat_col_enheder)
-            if lng_col_enheder:
-                merge_cols.append(lng_col_enheder)
-            
-            df = df.merge(
-                df_enheder[merge_cols], 
-                on='Handels-ID', 
-                how='left'
-            )
-            # Standardiser navnet
-            if rooms_col_enheder and rooms_col_enheder != 'Antal Værelser':
-                df['Antal Værelser'] = df[rooms_col_enheder]
-            if lat_col_enheder:
-                df['lat'] = df[lat_col_enheder]
-            if lng_col_enheder:
-                df['lng'] = df[lng_col_enheder]
-            
-            has_coords = lat_col_enheder and lng_col_enheder
-            print(f"   ✅ Merge lykkedes! Værelses-data{' og koordinater' if has_coords else ''} tilføjet.")
-        else:
-            print(f"   ⚠️  Kunne ikke merge - mangler kolonner")
-    
-    print(f"   📋 Tjekker kolonner...")
-    
-    # Find kolonnenavne (de kan variere lidt)
-    price_col = find_column(df, ['Pris', 'Price', 'Salgspris'])
-    area_col = find_column(df, ['Enhedsareal', 'Areal', 'Area'])
-    price_m2_col = find_column(df, ['Pris pr. m2 (enhedsareal)', 'Pris pr. m2', 'Pris/m2'])
-    name_col = find_column(df, ['Handelsnavn', 'Adresse', 'Address'])
-    date_col = find_column(df, ['Handelsdato', 'Dato', 'Date'])
-    
-    # Tjek om vi nu har værelses-data efter merge
-    if 'Antal Værelser' not in df.columns:
-        # Prøv at finde værelses-kolonne
-        room_col = None
-        for possible_name in ['Antal værelser', 'Værelser', 'Rooms', 'Antal rum']:
-            if possible_name in df.columns:
-                room_col = possible_name
-                df['Antal Værelser'] = df[room_col]
-                break
-        
-        if room_col is None:
-            print(f"   ⚠️  ADVARSEL: 'Antal Værelser' kolonne ikke fundet!")
-            print(f"   💡 Estimerer antal værelser baseret på areal...")
-            # Estimér antal værelser baseret på areal
-            def estimate_rooms(area):
-                if area < 50:
-                    return 2
-                elif area < 75:
-                    return 3
-                elif area < 100:
-                    return 4
-                elif area < 125:
-                    return 5
-                else:
-                    return 6
-            
-            df['Antal Værelser'] = df[area_col].apply(estimate_rooms)
-    
-    # Geocode kun hvis vi ikke allerede har koordinater
-    if 'lat' not in df.columns or 'lng' not in df.columns or df['lat'].isna().any():
-        print(f"   📍 Geocoder adresser...")
-        coords = df[name_col].apply(geocode_address)
-        if 'lat' not in df.columns:
-            df['lat'] = coords.apply(lambda x: x[0])
-        if 'lng' not in df.columns:
-            df['lng'] = coords.apply(lambda x: x[1])
-        # Fyld manglende koordinater
-        df['lat'] = df['lat'].fillna(coords.apply(lambda x: x[0]))
-        df['lng'] = df['lng'].fillna(coords.apply(lambda x: x[1]))
-    else:
-        print(f"   ✅ Koordinater allerede til stede fra Enheder-fanen")
-    
-    df['By'] = df[name_col].apply(parse_city_from_handelsnavn)
-    df['Handelsdato_str'] = pd.to_datetime(df[date_col]).dt.strftime('%Y-%m-%d')
-    
-    # Hent Anvendelse (Boligtype) fra Stamdata eller Enheder
-    if 'Anvendelse' not in df.columns:
-        anvendelse_col = None
-        for col_name in ['Anvendelse', 'Ejendomstype', 'Type', 'Enhedens anvendelse']:
-            if col_name in df.columns:
-                anvendelse_col = col_name
-                break
-        
-        if anvendelse_col:
-            df['Anvendelse'] = df[anvendelse_col]
-            print(f"   ✅ Anvendelse tilføjet fra kolonne: {anvendelse_col}")
-        else:
-            df['Anvendelse'] = 'Ikke angivet'
-            print(f"   ⚠️  Anvendelse ikke fundet - bruger 'Ikke angivet'")
-    
-    # Prøv at hente Opførelsesår fra Ejendomme-fanen hvis den findes
+
+    # Læs Stamdata
+    df = pd.read_excel(excel_path, sheet_name='Stamdata')
+
+    # Merge Enheder
+    df_enheder = pd.read_excel(excel_path, sheet_name='Enheder')
+    df = df.merge(
+        df_enheder[['Handels-ID', 'Antal værelser', 'Latitude', 'Longitude']],
+        on='Handels-ID', how='left'
+    )
+    df['Antal Værelser'] = df['Antal værelser']
+    df['lat'] = df['Latitude']
+    df['lng'] = df['Longitude']
+
+    # Merge Ejendomme (valgfri)
     if 'Ejendomme' in excel_file.sheet_names:
-        print(f"   🔗 Merger med 'Ejendomme' fane for Opførelsesår...")
         df_ejendomme = pd.read_excel(excel_path, sheet_name='Ejendomme')
-        
-        year_col_ejend = None
-        for col_name in ['Opførelsesår', 'Opfoerelsesaar', 'Byggeår']:
-            if col_name in df_ejendomme.columns:
-                year_col_ejend = col_name
-                break
-        
-        if year_col_ejend and 'Handels-ID' in df_ejendomme.columns:
-            df = df.merge(
-                df_ejendomme[['Handels-ID', year_col_ejend]],
-                on='Handels-ID',
-                how='left'
-            )
-            df['Opførelsesår'] = df[year_col_ejend]
-            print(f"   ✅ Opførelsesår hentet fra Ejendomme-fanen")
-        else:
-            df['Opførelsesår'] = None
-            print(f"   ⚠️  Opførelsesår ikke fundet i Ejendomme-fanen")
+        df = df.merge(
+            df_ejendomme[['Handels-ID', 'Opførelsesår']],
+            on='Handels-ID', how='left'
+        )
     else:
         df['Opførelsesår'] = None
-        print(f"   ⚠️  Ejendomme-fane ikke fundet - Opførelsesår ikke tilgængelig")
-    
-    # Standardiser kolonnenavne til hvad scriptet forventer
-    df['Pris'] = df[price_col]
-    df['Enhedsareal'] = df[area_col]
-    df['Pris pr. m2 (enhedsareal)'] = df[price_m2_col]
-    df['Handelsnavn'] = df[name_col]
-    df['Handelsdato'] = df[date_col]
+
+    # Anvend kolonne-aliaser
+    df['Enhedsareal']               = df['Enhedsareal']
+    df['Pris pr. m2 (enhedsareal)'] = df['Pris pr. m2 (enhedsareal)']
+    df['Handelsnavn']               = df['Handelsnavn']
+    df['Handelsdato']               = df['Handelsdato']
+    df['Pris']                      = df['Pris']
+    df['Anvendelse']                = df['Anvendelse'] if 'Anvendelse' in df.columns else 'Ikke angivet'
+
+    df['By']            = df['Handelsnavn'].apply(parse_city_from_handelsnavn)
+    df['Handelsdato_str'] = pd.to_datetime(df['Handelsdato']).dt.strftime('%Y-%m-%d')
     
     # Generer grafer
     print("   Genererer scatter plot...")
