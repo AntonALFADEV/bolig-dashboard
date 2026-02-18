@@ -2025,6 +2025,7 @@ def generate_html(leje_data, ejer_data, output_path):
             var prices = filtered.map(b => currentMode === 'leje' ? b.leje_m2 : b.pris_m2);
             var minPrice = prices.length > 0 ? Math.min(...prices) : 0;
             var maxPrice = prices.length > 0 ? Math.max(...prices) : 1;
+            var avgPrice = prices.length > 0 ? prices.reduce((a,b) => a + b, 0) / prices.length : 0;
             
             allToShow.forEach(function(bolig) {
                 var price = currentMode === 'leje' ? bolig.leje_m2 : bolig.pris_m2;
@@ -2033,14 +2034,17 @@ def generate_html(leje_data, ejer_data, output_path):
                 var isExcluded = selectedFilters.excluded.includes(bolig.id);
                 var isFiltered = !filtered.some(b => b.id === bolig.id);
                 
+                // Tjek for outlier: pris under halvdelen af gennemsnit
+                var isOutlier = !isExcluded && !isFiltered && price < (avgPrice * 0.5) && avgPrice > 0;
+                
                 // Grå ud hvis ekskluderet ELLER filtreret væk
                 var shouldGrey = isExcluded || isFiltered;
                 
                 var circle = L.circleMarker([bolig.lat, bolig.lng], {
                     radius: radius,
                     fillColor: shouldGrey ? '#bbb' : (colors[bolig.varelser] || '#95a5a6'),
-                    color: shouldGrey ? '#999' : '#000',
-                    weight: 2,
+                    color: isOutlier ? '#f59e0b' : (shouldGrey ? '#999' : '#000'),
+                    weight: isOutlier ? 3 : 2,
                     opacity: shouldGrey ? 0.3 : 1,
                     fillOpacity: shouldGrey ? 0.25 : 0.7,
                     boligId: bolig.id
@@ -2050,9 +2054,20 @@ def generate_html(leje_data, ejer_data, output_path):
                     ? `<button onclick="includeBolig('${bolig.id}')" style="margin-top:8px;width:100%;background:#10b981;color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">✓ Inkluder i analyse</button>`
                     : `<button onclick="excludeBolig('${bolig.id}')" style="margin-top:8px;width:100%;background:#ef4444;color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">✕ Ekskluder fra analyse</button>`;
                 
+                var outlierWarning = isOutlier 
+                    ? `<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;margin:8px 0;display:flex;gap:8px;align-items:start;">
+                        <span style="font-size:16px;">⚠️</span>
+                        <div style="flex:1;">
+                            <strong style="color:#92400e;font-size:11px;display:block;margin-bottom:2px;">Usædvanlig lav pris</strong>
+                            <span style="color:#78350f;font-size:10px;">Prisen er mindre end halvdelen af gennemsnittet (${Math.round(avgPrice).toLocaleString('da-DK')} kr./m²). Tjek om data er korrekt.</span>
+                        </div>
+                    </div>`
+                    : '';
+                
                 var popupContent = currentMode === 'leje' 
                     ? `<div class="info-box">
                         <h3>${bolig.adresse}, ${bolig.by}</h3>
+                        ${outlierWarning}
                         <p><strong>Areal:</strong> ${bolig.areal} m²</p>
                         <p><strong>Antal værelser:</strong> ${bolig.varelser}</p>
                         <p><strong>Leje pr. m²:</strong> ${bolig.leje_m2.toLocaleString('da-DK')} kr.</p>
@@ -2071,6 +2086,7 @@ def generate_html(leje_data, ejer_data, output_path):
                     </div>`
                     : `<div class="info-box">
                         <h3>${bolig.handelsnavn}</h3>
+                        ${outlierWarning}
                         <p><strong>By:</strong> ${bolig.by}</p>
                         <p><strong>Areal:</strong> ${bolig.areal} m2</p>
                         <p><strong>Antal værelser:</strong> ${bolig.varelser}</p>
