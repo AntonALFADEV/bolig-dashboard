@@ -786,6 +786,13 @@ def generate_html(leje_data, ejer_data, output_path):
         .filter-dropdown.open .filter-dropdown-menu {
             display: block;
         }
+        /* Dropdown der åbner opad */
+        .filter-dropdown.dropup .filter-dropdown-menu {
+            top: auto;
+            bottom: 100%;
+            margin-top: 0;
+            margin-bottom: 4px;
+        }
         .filter-dropdown-item {
             padding: 7px 11px;
             display: flex;
@@ -832,6 +839,32 @@ def generate_html(leje_data, ejer_data, output_path):
         #filter-panel { background: var(--bg-panel) !important; border-right: 1px solid var(--border) !important; }
 
         /* ── Turnkey panel ───────────────────────────── */
+        #warning-toggle {
+            position: fixed;
+            bottom: 185px;
+            left: 18px;
+            z-index: 1001;
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: inherit;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+            transition: all 0.15s ease;
+            display: none;
+        }
+        #warning-toggle:hover { 
+            background: #fde68a; 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245,158,11,0.4);
+        }
+
         #turnkey-toggle {
             position: fixed;
             bottom: 145px;
@@ -1089,6 +1122,9 @@ def generate_html(leje_data, ejer_data, output_path):
         <div class="mode-divider"></div>
         <button class="mode-btn" id="map-toggle-btn" style="color:var(--text-secondary);">Satellit</button>
     </div>
+
+    <!-- Advarsel knap (vises kun hvis der er outliers) -->
+    <button id="warning-toggle" style="display:none;" onclick="highlightOutliers()">⚠️ Advarsel</button>
 
     <!-- Turnkey toggle knap -->
     <button id="turnkey-toggle" onclick="toggleTurnkeyPanel()">Turnkey</button>
@@ -1805,10 +1841,10 @@ def generate_html(leje_data, ejer_data, output_path):
                 html += `
                 <div class="filter-group">
                     <div class="filter-label">${typeLabel}</div>
-                    <div class="filter-dropdown" id="type-dropdown">
+                    <div class="filter-dropdown dropup" id="type-dropdown">
                         <button class="filter-dropdown-btn ${selectedCount > 0 ? 'has-selection' : ''}" onclick="toggleDropdown('type-dropdown', event)">
                             <span>${buttonText}</span>
-                            <span class="filter-dropdown-arrow">▼</span>
+                            <span class="filter-dropdown-arrow">▲</span>
                         </button>
                         <div class="filter-dropdown-menu">
                             ${typer.map(t => `
@@ -2014,6 +2050,7 @@ def generate_html(leje_data, ejer_data, output_path):
         function updateMap(filtered) {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
+            window.outlierMarkers = [];  // Nulstil outlier tracking
             
             var colors = {2: '#f39c12', 3: '#e74c3c', 4: '#3498db', 5: '#2ecc71', 6: '#9b59b6', 7: '#1abc9c'};
             
@@ -2099,6 +2136,35 @@ def generate_html(leje_data, ejer_data, output_path):
                 circle.bindPopup(popupContent);
                 circle.addTo(map);
                 markers.push(circle);
+                
+                // Gem outlier markører
+                if (isOutlier) {
+                    if (!window.outlierMarkers) window.outlierMarkers = [];
+                    window.outlierMarkers.push(circle);
+                }
+            });
+            
+            // Vis/skjul advarselknap baseret på om der er outliers
+            var warningBtn = document.getElementById('warning-toggle');
+            if (window.outlierMarkers && window.outlierMarkers.length > 0) {
+                warningBtn.style.display = 'block';
+            } else {
+                warningBtn.style.display = 'none';
+            }
+        }
+        
+        function highlightOutliers() {
+            if (!window.outlierMarkers || window.outlierMarkers.length === 0) return;
+            
+            // Zoom til at vise alle outliers
+            var group = L.featureGroup(window.outlierMarkers);
+            map.fitBounds(group.getBounds().pad(0.2));
+            
+            // Blink effekt på outliers
+            window.outlierMarkers.forEach(function(marker, idx) {
+                setTimeout(function() {
+                    marker.openPopup();
+                }, idx * 300);
             });
         }
         
