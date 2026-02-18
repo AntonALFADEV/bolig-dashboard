@@ -593,9 +593,9 @@ def generate_html(leje_data, ejer_data, output_path):
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --bg-panel:     rgba(255,255,255,0.10);
-            --bg-panel-2:   rgba(255,255,255,0.10);
-            --bg-panel-3:   rgba(255,255,255,0.10);
+            --bg-panel:     rgba(255,255,255,0.05);
+            --bg-panel-2:   rgba(255,255,255,0.05);
+            --bg-panel-3:   rgba(255,255,255,0.05);
             --border:       rgba(0,0,0,0.12);
             --border-hi:    rgba(0,0,0,0.20);
             --text-primary: #1a1d23;
@@ -897,7 +897,7 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.25); border-color: var(--danger); color: white; }
         .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: transparent; min-height: 0; }
-        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
