@@ -367,8 +367,10 @@ def process_leje_data(excel_path):
     
     # Konverter til dictionary
     boliger = []
-    for _, row in df.iterrows():
+    for idx, row in enumerate(df.iterrows()):
+        _, row = row
         bolig = {
+            'id': f'leje_{idx}',
             'adresse': str(row['Adresse']),
             'by': str(row['By']),
             'lat': float(row['Lat']),
@@ -528,8 +530,10 @@ def process_ejer_data(excel_path):
     
     # Konverter til dictionary
     boliger = []
-    for _, row in df.iterrows():
+    for idx, row in enumerate(df.iterrows()):
+        _, row = row
         bolig = {
+            'id': f'ejer_{idx}',
             'handelsnavn': str(row['Handelsnavn']),
             'by': str(row['By']),
             'lat': float(row['lat']),
@@ -1244,7 +1248,8 @@ def generate_html(leje_data, ejer_data, output_path):
             aarMax: null,
             datoMin: null,
             datoMax: null,
-            type: []
+            type: [],
+            excluded: []  // Array af bolig-ID'er der er ekskluderet
         };
         
         function createScatterPlot(filtered) {
@@ -1859,6 +1864,23 @@ def generate_html(leje_data, ejer_data, output_path):
             return d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
         }
         
+        function excludeBolig(boligId) {
+            if (!selectedFilters.excluded.includes(boligId)) {
+                selectedFilters.excluded.push(boligId);
+                updateDisplay();
+                map.closePopup();
+            }
+        }
+
+        function includeBolig(boligId) {
+            var idx = selectedFilters.excluded.indexOf(boligId);
+            if (idx > -1) {
+                selectedFilters.excluded.splice(idx, 1);
+                updateDisplay();
+                map.closePopup();
+            }
+        }
+
         function toggleDropdown(dropdownId, event) {
             event.stopPropagation();
             var dropdown = document.getElementById(dropdownId);
@@ -1899,6 +1921,7 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         
         function resetFilters() {
+            selectedFilters.excluded = [];  // Nulstil ekskluderinger
             var data = currentMode === 'leje' ? lejeData : ejerData;
             initializeFilters(data);  // Aktivér alle filtre igen
             updateFilterContent();
@@ -1907,6 +1930,7 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function applyFilters(boliger) {
             return boliger.filter(function(bolig) {
+                var notExcluded = !selectedFilters.excluded.includes(bolig.id);
                 var varelserMatch = selectedFilters.varelser.includes(bolig.varelser);
                 var byMatch = selectedFilters.by.includes(bolig.by);
                 var aarMatch = bolig.opfoerelsesaar === null ||
@@ -1917,7 +1941,7 @@ def generate_html(leje_data, ejer_data, output_path):
                 var datoMatch = bolig.dato_ts === null || bolig.dato_ts === undefined ||
                                (selectedFilters.datoMin === null || bolig.dato_ts >= selectedFilters.datoMin) &&
                                (selectedFilters.datoMax === null || bolig.dato_ts <= selectedFilters.datoMax);
-                return varelserMatch && byMatch && aarMatch && typeMatch && datoMatch;
+                return notExcluded && varelserMatch && byMatch && aarMatch && typeMatch && datoMatch;
             });
         }
 
@@ -1985,14 +2009,21 @@ def generate_html(leje_data, ejer_data, output_path):
                 var price = currentMode === 'leje' ? bolig.leje_m2 : bolig.pris_m2;
                 var radius = 8 + ((price - minPrice) / (maxPrice - minPrice)) * 12;
                 
+                var isExcluded = selectedFilters.excluded.includes(bolig.id);
+                
                 var circle = L.circleMarker([bolig.lat, bolig.lng], {
                     radius: radius,
                     fillColor: colors[bolig.varelser] || '#95a5a6',
-                    color: '#000',
+                    color: isExcluded ? '#999' : '#000',
                     weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.7
+                    opacity: isExcluded ? 0.3 : 1,
+                    fillOpacity: isExcluded ? 0.2 : 0.7,
+                    boligId: bolig.id  // Gem ID på markøren
                 });
+                
+                var excludeBtn = isExcluded 
+                    ? `<button onclick="includeBolig('${bolig.id}')" style="margin-top:8px;width:100%;background:#10b981;color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">✓ Inkluder i analyse</button>`
+                    : `<button onclick="excludeBolig('${bolig.id}')" style="margin-top:8px;width:100%;background:#ef4444;color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">✕ Ekskluder fra analyse</button>`;
                 
                 var popupContent = currentMode === 'leje' 
                     ? `<div class="info-box">
@@ -2011,6 +2042,7 @@ def generate_html(leje_data, ejer_data, output_path):
                                  + '<p style="color:#3b82f6;font-weight:700;">Turnkey pr. m²: ' + tkM2.toLocaleString('da-DK') + ' kr.</p>'
                                  + '<p style="color:#3b82f6;font-weight:700;">Turnkey total: ' + tkTotal.toLocaleString('da-DK') + ' kr.</p>';
                         })()}
+                        ${excludeBtn}
                     </div>`
                     : `<div class="info-box">
                         <h3>${bolig.handelsnavn}</h3>
@@ -2020,6 +2052,7 @@ def generate_html(leje_data, ejer_data, output_path):
                         <p><strong>Salgspris:</strong> ${bolig.pris.toLocaleString('da-DK')} kr.</p>
                         <p><strong>Pris pr. m2:</strong> ${bolig.pris_m2.toLocaleString('da-DK')} kr.</p>
                         <p><strong>Handelsdato:</strong> ${bolig.handelsdato}</p>
+                        ${excludeBtn}
                     </div>`;
                 
                 circle.bindPopup(popupContent);
