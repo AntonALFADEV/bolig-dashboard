@@ -1762,20 +1762,38 @@ def generate_html(leje_data, ejer_data, output_path):
             var html = `
                 <div class="filter-group">
                     <div class="filter-label">Værelser</div>
-                    <div class="filter-options">
-                        ${vaerelser.map(v => `
-                            <button class="filter-btn ${selectedFilters.varelser.includes(v) ? 'active' : ''}" 
-                                    onclick="toggleFilter('varelser', ${v})">${v}</button>
-                        `).join('')}
+                    <div class="filter-dropdown" id="varelser-dropdown">
+                        <button class="filter-dropdown-btn ${selectedFilters.varelser.length > 0 ? 'has-selection' : ''}" onclick="toggleDropdown('varelser-dropdown', event)">
+                            <span>${selectedFilters.varelser.length === 0 ? 'Vælg...' : selectedFilters.varelser.length + ' valgt'}</span>
+                            <span class="filter-dropdown-arrow">▼</span>
+                        </button>
+                        <div class="filter-dropdown-menu">
+                            ${vaerelser.map(v => `
+                                <div class="filter-dropdown-item" onclick="event.stopPropagation(); toggleFilter('varelser', ${v})">
+                                    <input type="checkbox" ${selectedFilters.varelser.includes(v) ? 'checked' : ''} 
+                                           onchange="event.stopPropagation(); toggleFilter('varelser', ${v})">
+                                    <label style="cursor:pointer; user-select:none;">${v} værelser</label>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
                 <div class="filter-group">
                     <div class="filter-label">By</div>
-                    <div class="filter-options">
-                        ${byer.map(b => `
-                            <button class="filter-btn ${selectedFilters.by.includes(b) ? 'active' : ''}" 
-                                    onclick="toggleFilter('by', '${b}')">${b}</button>
-                        `).join('')}
+                    <div class="filter-dropdown" id="by-dropdown">
+                        <button class="filter-dropdown-btn ${selectedFilters.by.length > 0 ? 'has-selection' : ''}" onclick="toggleDropdown('by-dropdown', event)">
+                            <span>${selectedFilters.by.length === 0 ? 'Vælg...' : selectedFilters.by.length + ' valgt'}</span>
+                            <span class="filter-dropdown-arrow">▼</span>
+                        </button>
+                        <div class="filter-dropdown-menu">
+                            ${byer.map(b => `
+                                <div class="filter-dropdown-item" onclick="event.stopPropagation(); toggleFilter('by', '${b}')">
+                                    <input type="checkbox" ${selectedFilters.by.includes(b) ? 'checked' : ''} 
+                                           onchange="event.stopPropagation(); toggleFilter('by', '${b}')">
+                                    <label style="cursor:pointer; user-select:none;">${b}</label>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>`;
             
@@ -1999,26 +2017,33 @@ def generate_html(leje_data, ejer_data, output_path):
             
             var colors = {2: '#f39c12', 3: '#e74c3c', 4: '#3498db', 5: '#2ecc71', 6: '#9b59b6', 7: '#1abc9c'};
             
-            if (filtered.length === 0) return;
+            // Brug ALLE boliger for at vise kortet, ikke kun filtrerede
+            var allToShow = allBoliger;
+            
+            if (allToShow.length === 0) return;
             
             var prices = filtered.map(b => currentMode === 'leje' ? b.leje_m2 : b.pris_m2);
-            var minPrice = Math.min(...prices);
-            var maxPrice = Math.max(...prices);
+            var minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+            var maxPrice = prices.length > 0 ? Math.max(...prices) : 1;
             
-            filtered.forEach(function(bolig) {
+            allToShow.forEach(function(bolig) {
                 var price = currentMode === 'leje' ? bolig.leje_m2 : bolig.pris_m2;
-                var radius = 8 + ((price - minPrice) / (maxPrice - minPrice)) * 12;
+                var radius = 8 + ((price - minPrice) / (maxPrice - minPrice || 1)) * 12;
                 
                 var isExcluded = selectedFilters.excluded.includes(bolig.id);
+                var isFiltered = !filtered.some(b => b.id === bolig.id);
+                
+                // Grå ud hvis ekskluderet ELLER filtreret væk
+                var shouldGrey = isExcluded || isFiltered;
                 
                 var circle = L.circleMarker([bolig.lat, bolig.lng], {
                     radius: radius,
-                    fillColor: colors[bolig.varelser] || '#95a5a6',
-                    color: isExcluded ? '#999' : '#000',
+                    fillColor: shouldGrey ? '#bbb' : (colors[bolig.varelser] || '#95a5a6'),
+                    color: shouldGrey ? '#999' : '#000',
                     weight: 2,
-                    opacity: isExcluded ? 0.3 : 1,
-                    fillOpacity: isExcluded ? 0.2 : 0.7,
-                    boligId: bolig.id  // Gem ID på markøren
+                    opacity: shouldGrey ? 0.3 : 1,
+                    fillOpacity: shouldGrey ? 0.25 : 0.7,
+                    boligId: bolig.id
                 });
                 
                 var excludeBtn = isExcluded 
