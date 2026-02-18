@@ -623,8 +623,8 @@ def generate_html(leje_data, ejer_data, output_path):
             transform: translateX(-50%);
             z-index: 1001;
             background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.5);
@@ -662,8 +662,8 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .bi-box {
             background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
@@ -765,8 +765,8 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1001;
             background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             color: var(--text-secondary);
             padding: 7px 14px;
@@ -790,8 +790,8 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1000;
             background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 16px 18px;
@@ -868,8 +868,8 @@ def generate_html(leje_data, ejer_data, output_path):
         .overlay-filters {
             width: 210px; flex-shrink: 0;
             background: var(--bg-panel) !important;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border-right: 1px solid var(--border) !important;
             padding: 16px; overflow-y: auto;
         }
@@ -897,7 +897,7 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.25); border-color: var(--danger); color: white; }
         .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: transparent; min-height: 0; }
-        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 8px; overflow: auto; min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.05); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -909,8 +909,8 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Map popups & legend ─────────────────────── */
         .info-box {
             padding: 14px; background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             border-radius: 8px; color: var(--text-primary);
             font-family: 'Inter', sans-serif;
@@ -924,8 +924,8 @@ def generate_html(leje_data, ejer_data, output_path):
         .legend {
             padding: 10px 12px;
             background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
@@ -938,15 +938,15 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Sliders ─────────────────────────────────── */
         #sliders-wrapper > div {
             background: var(--bg-panel) !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
+            backdrop-filter: blur(3px) !important;
+            -webkit-backdrop-filter: blur(3px) !important;
             border: 1px solid var(--border) !important;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
         }
         #dato-slider-container, #year-slider-container {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
         }
         input[type=range] {
             -webkit-appearance: none; appearance: none;
