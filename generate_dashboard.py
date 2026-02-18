@@ -593,9 +593,9 @@ def generate_html(leje_data, ejer_data, output_path):
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --bg-panel:     rgba(255,255,255,0.05);
-            --bg-panel-2:   rgba(255,255,255,0.05);
-            --bg-panel-3:   rgba(255,255,255,0.05);
+            --bg-panel:     #f0f2f5;
+            --bg-panel-2:   #e4e7ec;
+            --bg-panel-3:   #d4d8e0;
             --border:       rgba(0,0,0,0.12);
             --border-hi:    rgba(0,0,0,0.20);
             --text-primary: #1a1d23;
@@ -623,8 +623,6 @@ def generate_html(leje_data, ejer_data, output_path):
             transform: translateX(-50%);
             z-index: 1001;
             background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.5);
@@ -662,8 +660,6 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         .bi-box {
             background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
@@ -765,8 +761,6 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1001;
             background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             color: var(--text-secondary);
             padding: 7px 14px;
@@ -790,8 +784,6 @@ def generate_html(leje_data, ejer_data, output_path):
             left: 18px;
             z-index: 1000;
             background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 16px 18px;
@@ -862,42 +854,39 @@ def generate_html(leje_data, ejer_data, output_path):
             display: none; position: fixed; z-index: 2000;
             left: 0; top: 0; width: 100%; height: 100vh;
             background-color: rgba(10,16,30,0.85);
-            backdrop-filter: blur(6px);
         }
         .overlay-inner { display: flex; width: 100%; height: 100vh; align-items: stretch; }
         .overlay-filters {
             width: 210px; flex-shrink: 0;
             background: var(--bg-panel) !important;
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border-right: 1px solid var(--border) !important;
             padding: 16px; overflow-y: auto;
         }
         .overlay-filters .filter-group { margin-bottom: 14px; }
         .overlay-filters .filter-label {
-            font-size: 9px; letter-spacing: 0.12em; color: rgba(255,255,255,0.7);
+            font-size: 9px; letter-spacing: 0.12em; color: #8b95a3;
             margin-bottom: 7px; font-weight: 700; text-transform: uppercase;
         }
         .overlay-filters .filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
         .overlay-filters .filter-btn {
-            background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9);
-            border: 1px solid rgba(255,255,255,0.25);
+            background: #e4e7ec; color: #4b5563;
+            border: 1px solid rgba(0,0,0,0.12);
             padding: 4px 11px; border-radius: 6px; font-size: 11px;
             font-family: inherit; cursor: pointer; transition: all 0.15s ease;
         }
-        .overlay-filters .filter-btn:hover { background: rgba(255,255,255,0.25); }
+        .overlay-filters .filter-btn:hover { background: #d4d8e0; }
         .overlay-filters .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
         .overlay-filters .reset-btn {
-            width: 100%; background: transparent; color: rgba(255,255,255,0.7);
-            border: 1px solid rgba(255,255,255,0.3);
+            width: 100%; background: transparent; color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.3);
             padding: 7px; border-radius: 6px; cursor: pointer;
             font-size: 10px; font-weight: 600; font-family: inherit;
             letter-spacing: 0.06em; text-transform: uppercase; margin-top: 10px;
             transition: all 0.15s ease;
         }
-        .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.25); border-color: var(--danger); color: white; }
+        .overlay-filters .reset-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); }
         .overlay-chart { flex: 1; padding: 16px; display: flex; flex-direction: column; background: transparent; min-height: 0; }
-        .overlay-chart-inner { flex: 1; background: rgba(255,255,255,0.05); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 8px; overflow: auto; min-height: 0; }
+        .overlay-chart-inner { flex: 1; background: #f0f2f5; border-radius: 8px; overflow: auto; min-height: 0; }
         .close {
             position: absolute; top: 12px; right: 18px;
             color: var(--text-secondary); font-size: 22px; font-weight: 400;
@@ -909,8 +898,6 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Map popups & legend ─────────────────────── */
         .info-box {
             padding: 14px; background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border-hi);
             border-radius: 8px; color: var(--text-primary);
             font-family: 'Inter', sans-serif;
@@ -924,8 +911,6 @@ def generate_html(leje_data, ejer_data, output_path):
         .legend {
             padding: 10px 12px;
             background: var(--bg-panel);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
             border: 1px solid var(--border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
@@ -938,15 +923,11 @@ def generate_html(leje_data, ejer_data, output_path):
         /* ── Sliders ─────────────────────────────────── */
         #sliders-wrapper > div {
             background: var(--bg-panel) !important;
-            backdrop-filter: blur(3px) !important;
-            -webkit-backdrop-filter: blur(3px) !important;
             border: 1px solid var(--border) !important;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
         }
         #dato-slider-container, #year-slider-container {
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
         }
         input[type=range] {
             -webkit-appearance: none; appearance: none;
@@ -2010,10 +1991,10 @@ def generate_html(leje_data, ejer_data, output_path):
             window._ovTyper = typer;
             
             var btnActive   = 'background:#3b82f6;color:white;border:1px solid #3b82f6;';
-            var btnInactive = 'background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.25);';
+            var btnInactive = 'background:#e4e7ec;color:#4b5563;border:1px solid rgba(0,0,0,0.12);';
             var btnBase     = 'padding:4px 10px;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;';
-            var labelStyle  = 'font-size:9px;color:rgba(255,255,255,0.65);margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
-            var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:15px;">Filtre</div>';
+            var labelStyle  = 'font-size:9px;color:#8b95a3;margin-bottom:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;display:block;';
+            var html = '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8b95a3;margin-bottom:15px;">Filtre</div>';
 
             // Vaerelser
             html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Vaerelser</span><div style="display:flex;flex-wrap:wrap;gap:5px;">';
@@ -2049,14 +2030,14 @@ def generate_html(leje_data, ejer_data, output_path):
                 var curMin  = selectedFilters.aarMin !== null ? selectedFilters.aarMin : minYear;
                 var curMax  = selectedFilters.aarMax !== null ? selectedFilters.aarMax : maxYear;
                 html += '<div style="margin-bottom:12px;"><span style="' + labelStyle + '">Opf. år</span>';
-                html += '<div style="font-size:11px;margin-bottom:2px;color:rgba(255,255,255,0.7);">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:#4b5563;">Fra: <b><span id="ov-min-' + num + '">' + curMin + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMin + '" style="width:100%;margin:2px 0;" oninput="ovYearMin(this.value,' + num + ')">';
-                html += '<div style="font-size:11px;margin-bottom:2px;color:rgba(255,255,255,0.7);">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
+                html += '<div style="font-size:11px;margin-bottom:2px;color:#4b5563;">Til: <b><span id="ov-max-' + num + '">' + curMax + '</span></b></div>';
                 html += '<input type="range" min="' + minYear + '" max="' + maxYear + '" value="' + curMax + '" style="width:100%;margin:2px 0;" oninput="ovYearMax(this.value,' + num + ')">';
                 html += '</div>';
             }
             
-            html += '<button style="width:100%;background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);padding:7px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;" onclick="ovReset(' + num + ')">Nulstil filtre</button>';
+            html += '<button style="width:100%;background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.35);padding:7px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;margin-top:8px;" onclick="ovReset(' + num + ')">Nulstil filtre</button>';
             
             container.innerHTML = html;
         }
