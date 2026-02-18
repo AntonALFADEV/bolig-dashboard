@@ -734,6 +734,79 @@ def generate_html(leje_data, ejer_data, output_path):
         .filter-btn:hover { background: var(--bg-panel-3); color: var(--text-primary); border-color: var(--border-hi); }
         .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
+        /* Dropdown checkbox filter */
+        .filter-dropdown {
+            position: relative;
+        }
+        .filter-dropdown-btn {
+            width: 100%;
+            background: var(--bg-panel-2);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 11px;
+            font-size: 11px;
+            font-weight: 500;
+            font-family: inherit;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .filter-dropdown-btn:hover {
+            background: var(--bg-panel-3);
+            border-color: var(--border-hi);
+        }
+        .filter-dropdown-btn.has-selection {
+            background: rgba(59,130,246,0.08);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .filter-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: white;
+            border: 1px solid var(--border-hi);
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .filter-dropdown.open .filter-dropdown-menu {
+            display: block;
+        }
+        .filter-dropdown-item {
+            padding: 7px 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #1a1d23;
+            transition: background 0.1s;
+        }
+        .filter-dropdown-item:hover {
+            background: #f8f9fa;
+        }
+        .filter-dropdown-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+        .filter-dropdown-arrow {
+            font-size: 9px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+        .filter-dropdown.open .filter-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
         .reset-btn {
             background: transparent;
             color: var(--danger);
@@ -1701,17 +1774,28 @@ def generate_html(leje_data, ejer_data, output_path):
                     </div>
                 </div>`;
             
-            // Tilføj Boligtype/Anvendelse filter
-            if (typer.length > 0 && typer.length < 10) {
+            // Tilføj Boligtype/Anvendelse filter som dropdown
+            if (typer.length > 0) {
                 var typeLabel = currentMode === 'leje' ? 'Boligtype' : 'Anvendelse';
+                var selectedCount = selectedFilters.type.length;
+                var buttonText = selectedCount === 0 ? 'Vælg...' : `${selectedCount} valgt`;
                 html += `
                 <div class="filter-group">
                     <div class="filter-label">${typeLabel}</div>
-                    <div class="filter-options">
-                        ${typer.map(t => `
-                            <button class="filter-btn ${selectedFilters.type.includes(t) ? 'active' : ''}" 
-                                    onclick="toggleFilter('type', '${t}')">${t.length > 20 ? t.substring(0, 18) + '...' : t}</button>
-                        `).join('')}
+                    <div class="filter-dropdown" id="type-dropdown">
+                        <button class="filter-dropdown-btn ${selectedCount > 0 ? 'has-selection' : ''}" onclick="toggleDropdown('type-dropdown', event)">
+                            <span>${buttonText}</span>
+                            <span class="filter-dropdown-arrow">▼</span>
+                        </button>
+                        <div class="filter-dropdown-menu">
+                            ${typer.map(t => `
+                                <div class="filter-dropdown-item" onclick="event.stopPropagation(); toggleFilter('type', '${t}')">
+                                    <input type="checkbox" ${selectedFilters.type.includes(t) ? 'checked' : ''} 
+                                           onchange="event.stopPropagation(); toggleFilter('type', '${t}')">
+                                    <label style="cursor:pointer; user-select:none;">${t}</label>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>`;
             }
@@ -1775,6 +1859,27 @@ def generate_html(leje_data, ejer_data, output_path):
             return d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
         }
         
+        function toggleDropdown(dropdownId, event) {
+            event.stopPropagation();
+            var dropdown = document.getElementById(dropdownId);
+            var wasOpen = dropdown.classList.contains('open');
+            
+            // Luk alle andre dropdowns
+            document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+            
+            // Toggle denne dropdown
+            if (!wasOpen) {
+                dropdown.classList.add('open');
+            }
+        }
+
+        // Luk dropdown ved click udenfor
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.filter-dropdown')) {
+                document.querySelectorAll('.filter-dropdown.open').forEach(d => d.classList.remove('open'));
+            }
+        });
+
         function toggleFilter(type, value) {
             var index = selectedFilters[type].indexOf(value);
             if (index > -1) {
