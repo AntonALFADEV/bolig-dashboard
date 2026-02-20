@@ -1113,6 +1113,37 @@ def generate_html(leje_data, ejer_data, output_path):
             color: #1d4ed8; font-weight: 700;
             background: rgba(59,130,246,0.12) !important;
         }
+        
+        /* Leaflet Draw kontrol styling */
+        .leaflet-draw {
+            margin-bottom: 10px !important;
+        }
+        .leaflet-draw-toolbar {
+            background: var(--bg-panel) !important;
+            border: 1px solid var(--border-hi) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+        }
+        .leaflet-draw-toolbar a {
+            background-color: white !important;
+            border-bottom: 1px solid var(--border) !important;
+        }
+        .leaflet-draw-toolbar a:first-child {
+            border-radius: 8px 8px 0 0 !important;
+        }
+        .leaflet-draw-toolbar a:last-child {
+            border-radius: 0 0 8px 8px !important;
+            border-bottom: none !important;
+        }
+        .leaflet-draw-toolbar a:hover {
+            background-color: var(--bg-panel-2) !important;
+        }
+        .leaflet-draw-actions {
+            background: var(--bg-panel) !important;
+            border: 1px solid var(--border-hi) !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
     </style>
 </head>
 <body>
@@ -2409,7 +2440,7 @@ def generate_html(leje_data, ejer_data, output_path):
         map.addLayer(window.drawnItems);
         
         var drawControl = new L.Control.Draw({
-            position: 'topright',
+            position: 'bottomleft',
             draw: {
                 polygon: {
                     allowIntersection: false,
