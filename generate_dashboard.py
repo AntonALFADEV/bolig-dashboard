@@ -1113,37 +1113,6 @@ def generate_html(leje_data, ejer_data, output_path):
             color: #1d4ed8; font-weight: 700;
             background: rgba(59,130,246,0.12) !important;
         }
-        
-        /* Leaflet Draw kontrol styling */
-        .leaflet-draw {
-            margin-bottom: 10px !important;
-        }
-        .leaflet-draw-toolbar {
-            background: var(--bg-panel) !important;
-            border: 1px solid var(--border-hi) !important;
-            border-radius: 8px !important;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
-        }
-        .leaflet-draw-toolbar a {
-            background-color: white !important;
-            border-bottom: 1px solid var(--border) !important;
-        }
-        .leaflet-draw-toolbar a:first-child {
-            border-radius: 8px 8px 0 0 !important;
-        }
-        .leaflet-draw-toolbar a:last-child {
-            border-radius: 0 0 8px 8px !important;
-            border-bottom: none !important;
-        }
-        .leaflet-draw-toolbar a:hover {
-            background-color: var(--bg-panel-2) !important;
-        }
-        .leaflet-draw-actions {
-            background: var(--bg-panel) !important;
-            border: 1px solid var(--border-hi) !important;
-            border-radius: 6px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-        }
     </style>
 </head>
 <body>
@@ -1154,6 +1123,11 @@ def generate_html(leje_data, ejer_data, output_path):
         <div class="mode-divider"></div>
         <button class="mode-btn" id="map-toggle-btn" style="color:var(--text-secondary);">Satellit</button>
         <button class="mode-btn" id="draw-toggle-btn" onclick="toggleDrawMode()" style="color:var(--text-secondary);">✏️ Tegn</button>
+        <div id="draw-tools" style="display:none; gap:0;">
+            <button class="mode-btn" onclick="startDrawRectangle()" title="Tegn rektangel" style="color:var(--text-secondary);">▭</button>
+            <button class="mode-btn" onclick="startDrawPolygon()" title="Tegn polygon" style="color:var(--text-secondary);">⬡</button>
+            <button class="mode-btn" onclick="clearDrawing()" title="Slet tegning" style="color:var(--danger);">🗑️</button>
+        </div>
     </div>
 
     <!-- Advarsel knap (vises kun hvis der er outliers) -->
@@ -2439,50 +2413,61 @@ def generate_html(leje_data, ejer_data, output_path):
         window.drawnItems = new L.FeatureGroup();
         map.addLayer(window.drawnItems);
         
-        var drawControl = new L.Control.Draw({
-            position: 'bottomleft',
-            draw: {
-                polygon: {
-                    allowIntersection: false,
-                    shapeOptions: {
-                        color: '#3b82f6',
-                        weight: 2,
-                        fillOpacity: 0.1
-                    }
-                },
-                polyline: false,
-                circle: false,
-                marker: false,
-                circlemarker: false,
-                rectangle: {
-                    shapeOptions: {
-                        color: '#3b82f6',
-                        weight: 2,
-                        fillOpacity: 0.1
-                    }
-                }
-            },
-            edit: {
-                featureGroup: window.drawnItems,
-                remove: true
-            }
-        });
-        
         var drawModeActive = false;
+        var currentDrawHandler = null;
         
         function toggleDrawMode() {
             drawModeActive = !drawModeActive;
             var btn = document.getElementById('draw-toggle-btn');
+            var drawTools = document.getElementById('draw-tools');
             
             if (drawModeActive) {
-                map.addControl(drawControl);
                 btn.classList.add('active');
                 btn.style.color = '';
+                drawTools.style.display = 'flex';
             } else {
-                map.removeControl(drawControl);
                 btn.classList.remove('active');
                 btn.style.color = 'var(--text-secondary)';
+                drawTools.style.display = 'none';
+                if (currentDrawHandler) {
+                    currentDrawHandler.disable();
+                    currentDrawHandler = null;
+                }
             }
+        }
+        
+        function startDrawPolygon() {
+            if (currentDrawHandler) currentDrawHandler.disable();
+            currentDrawHandler = new L.Draw.Polygon(map, {
+                shapeOptions: {
+                    color: '#3b82f6',
+                    weight: 2,
+                    fillOpacity: 0.1
+                }
+            });
+            currentDrawHandler.enable();
+        }
+        
+        function startDrawRectangle() {
+            if (currentDrawHandler) currentDrawHandler.disable();
+            currentDrawHandler = new L.Draw.Rectangle(map, {
+                shapeOptions: {
+                    color: '#3b82f6',
+                    weight: 2,
+                    fillOpacity: 0.1
+                }
+            });
+            currentDrawHandler.enable();
+        }
+        
+        function clearDrawing() {
+            window.drawnItems.clearLayers();
+            selectedFilters.drawArea = null;
+            if (currentDrawHandler) {
+                currentDrawHandler.disable();
+                currentDrawHandler = null;
+            }
+            updateDisplay();
         }
         
         // Når område tegnes
@@ -2491,19 +2476,17 @@ def generate_html(leje_data, ejer_data, output_path):
             window.drawnItems.clearLayers();
             window.drawnItems.addLayer(layer);
             
+            if (currentDrawHandler) {
+                currentDrawHandler.disable();
+                currentDrawHandler = null;
+            }
+            
             // Filtrer boliger inden for området
             var bounds = layer.getBounds ? layer.getBounds() : null;
             if (bounds) {
                 selectedFilters.drawArea = bounds;
                 updateDisplay();
             }
-        });
-        
-        // Når område slettes
-        map.on(L.Draw.Event.DELETED, function(e) {
-            window.drawnItems.clearLayers();
-            selectedFilters.drawArea = null;
-            updateDisplay();
         });
         
         // Initialiser charts
