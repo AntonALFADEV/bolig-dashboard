@@ -1294,7 +1294,7 @@ def generate_html(leje_data, ejer_data, output_path):
             datoMax: null,
             type: [],
             excluded: [],  // Array af bolig-ID'er der er ekskluderet
-            drawArea: null  // Leaflet bounds objekt fra tegnet område
+            drawLayer: null  // Leaflet layer objekt fra tegnet område
         };
         
         function createScatterPlot(filtered) {
@@ -1944,6 +1944,19 @@ def generate_html(leje_data, ejer_data, output_path):
             }
         }
 
+        // Ray casting algoritme til at tjekke om punkt er inden for polygon
+        function isPointInPolygon(point, polygonPoints) {
+            var x = point.lat, y = point.lng;
+            var inside = false;
+            for (var i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                var xi = polygonPoints[i].lat, yi = polygonPoints[i].lng;
+                var xj = polygonPoints[j].lat, yj = polygonPoints[j].lng;
+                var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
         function toggleDropdown(dropdownId, event) {
             event.stopPropagation();
             var dropdown = document.getElementById(dropdownId);
@@ -1985,7 +1998,7 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function resetFilters() {
             selectedFilters.excluded = [];  // Nulstil ekskluderinger
-            selectedFilters.drawArea = null;  // Nulstil tegnet område
+            selectedFilters.drawLayer = null;  // Nulstil tegnet område
             if (window.drawnItems) window.drawnItems.clearLayers();  // Fjern tegnede former
             var data = currentMode === 'leje' ? lejeData : ejerData;
             initializeFilters(data);  // Aktivér alle filtre igen
@@ -2009,9 +2022,16 @@ def generate_html(leje_data, ejer_data, output_path):
                 
                 // Tjek om bolig er inden for tegnet område
                 var areaMatch = true;
-                if (selectedFilters.drawArea) {
+                if (selectedFilters.drawLayer) {
                     var latLng = L.latLng(bolig.lat, bolig.lng);
-                    areaMatch = selectedFilters.drawArea.contains(latLng);
+                    // Brug getBounds for rektangler og containsLatLng for polygoner
+                    if (selectedFilters.drawLayer instanceof L.Rectangle) {
+                        areaMatch = selectedFilters.drawLayer.getBounds().contains(latLng);
+                    } else if (selectedFilters.drawLayer instanceof L.Polygon) {
+                        // Leaflet Polygon har ikke containsLatLng, så vi bruger ray casting
+                        var latlngs = selectedFilters.drawLayer.getLatLngs()[0];
+                        areaMatch = isPointInPolygon(latLng, latlngs);
+                    }
                 }
                 
                 return notExcluded && varelserMatch && byMatch && aarMatch && typeMatch && datoMatch && areaMatch;
@@ -2462,7 +2482,7 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function clearDrawing() {
             window.drawnItems.clearLayers();
-            selectedFilters.drawArea = null;
+            selectedFilters.drawLayer = null;
             if (currentDrawHandler) {
                 currentDrawHandler.disable();
                 currentDrawHandler = null;
@@ -2481,12 +2501,9 @@ def generate_html(leje_data, ejer_data, output_path):
                 currentDrawHandler = null;
             }
             
-            // Filtrer boliger inden for området
-            var bounds = layer.getBounds ? layer.getBounds() : null;
-            if (bounds) {
-                selectedFilters.drawArea = bounds;
-                updateDisplay();
-            }
+            // Gem layer'en så vi kan tjekke præcis geometri
+            selectedFilters.drawLayer = layer;
+            updateDisplay();
         });
         
         // Initialiser charts
