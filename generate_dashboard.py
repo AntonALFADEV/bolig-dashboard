@@ -590,6 +590,7 @@ def generate_html(leje_data, ejer_data, output_path):
     <title>Bolig Analyse</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     
@@ -1121,6 +1122,7 @@ def generate_html(leje_data, ejer_data, output_path):
         <button class="mode-btn" onclick="switchMode('ejer')">Ejerboliger</button>
         <div class="mode-divider"></div>
         <button class="mode-btn" id="map-toggle-btn" style="color:var(--text-secondary);">Satellit</button>
+        <button class="mode-btn" id="draw-toggle-btn" onclick="toggleDrawMode()" style="color:var(--text-secondary);">✏️ Tegn</button>
     </div>
 
     <!-- Advarsel knap (vises kun hvis der er outliers) -->
@@ -1266,6 +1268,7 @@ def generate_html(leje_data, ejer_data, output_path):
     </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
         var lejeData = __LEJE_DATA__;
         var ejerData = __EJER_DATA__;
@@ -1285,7 +1288,8 @@ def generate_html(leje_data, ejer_data, output_path):
             datoMin: null,
             datoMax: null,
             type: [],
-            excluded: []  // Array af bolig-ID'er der er ekskluderet
+            excluded: [],  // Array af bolig-ID'er der er ekskluderet
+            drawArea: null  // Leaflet bounds objekt fra tegnet område
         };
         
         function createScatterPlot(filtered) {
@@ -1976,6 +1980,8 @@ def generate_html(leje_data, ejer_data, output_path):
         
         function resetFilters() {
             selectedFilters.excluded = [];  // Nulstil ekskluderinger
+            selectedFilters.drawArea = null;  // Nulstil tegnet område
+            if (window.drawnItems) window.drawnItems.clearLayers();  // Fjern tegnede former
             var data = currentMode === 'leje' ? lejeData : ejerData;
             initializeFilters(data);  // Aktivér alle filtre igen
             updateFilterContent();
@@ -1995,7 +2001,15 @@ def generate_html(leje_data, ejer_data, output_path):
                 var datoMatch = bolig.dato_ts === null || bolig.dato_ts === undefined ||
                                (selectedFilters.datoMin === null || bolig.dato_ts >= selectedFilters.datoMin) &&
                                (selectedFilters.datoMax === null || bolig.dato_ts <= selectedFilters.datoMax);
-                return notExcluded && varelserMatch && byMatch && aarMatch && typeMatch && datoMatch;
+                
+                // Tjek om bolig er inden for tegnet område
+                var areaMatch = true;
+                if (selectedFilters.drawArea) {
+                    var latLng = L.latLng(bolig.lat, bolig.lng);
+                    areaMatch = selectedFilters.drawArea.contains(latLng);
+                }
+                
+                return notExcluded && varelserMatch && byMatch && aarMatch && typeMatch && datoMatch && areaMatch;
             });
         }
 
@@ -2388,6 +2402,77 @@ def generate_html(leje_data, ejer_data, output_path):
             map.addLayer(window._baseMaps[nextKey]);
             window._currentBaseKey = nextKey;
             this.textContent = nextKey === 'Kort' ? 'Satellit' : 'Kort';
+        });
+        
+        // Tegne-funktionalitet
+        window.drawnItems = new L.FeatureGroup();
+        map.addLayer(window.drawnItems);
+        
+        var drawControl = new L.Control.Draw({
+            position: 'topright',
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    shapeOptions: {
+                        color: '#3b82f6',
+                        weight: 2,
+                        fillOpacity: 0.1
+                    }
+                },
+                polyline: false,
+                circle: false,
+                marker: false,
+                circlemarker: false,
+                rectangle: {
+                    shapeOptions: {
+                        color: '#3b82f6',
+                        weight: 2,
+                        fillOpacity: 0.1
+                    }
+                }
+            },
+            edit: {
+                featureGroup: window.drawnItems,
+                remove: true
+            }
+        });
+        
+        var drawModeActive = false;
+        
+        function toggleDrawMode() {
+            drawModeActive = !drawModeActive;
+            var btn = document.getElementById('draw-toggle-btn');
+            
+            if (drawModeActive) {
+                map.addControl(drawControl);
+                btn.classList.add('active');
+                btn.style.color = '';
+            } else {
+                map.removeControl(drawControl);
+                btn.classList.remove('active');
+                btn.style.color = 'var(--text-secondary)';
+            }
+        }
+        
+        // Når område tegnes
+        map.on(L.Draw.Event.CREATED, function(e) {
+            var layer = e.layer;
+            window.drawnItems.clearLayers();
+            window.drawnItems.addLayer(layer);
+            
+            // Filtrer boliger inden for området
+            var bounds = layer.getBounds ? layer.getBounds() : null;
+            if (bounds) {
+                selectedFilters.drawArea = bounds;
+                updateDisplay();
+            }
+        });
+        
+        // Når område slettes
+        map.on(L.Draw.Event.DELETED, function(e) {
+            window.drawnItems.clearLayers();
+            selectedFilters.drawArea = null;
+            updateDisplay();
         });
         
         // Initialiser charts
