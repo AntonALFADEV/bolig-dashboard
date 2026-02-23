@@ -1038,7 +1038,7 @@ def generate_html(leje_data, ejer_data, output_path):
             box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
         }
-        #dato-slider-container, #year-slider-container {
+        #dato-slider-container, #year-slider-container, #areal-slider-container {
         }
         input[type=range] {
             -webkit-appearance: none; appearance: none;
@@ -1216,6 +1216,26 @@ def generate_html(leje_data, ejer_data, output_path):
             <span><span style="color:var(--text-muted); font-size:10px;">Til: </span><span id="year-value-max" style="color:var(--accent);">2025</span></span>
         </div>
     </div>
+    <div id="areal-slider-container" style="display: none; background: var(--bg-panel); border: 1px solid var(--border-hi); padding: 15px 25px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); min-width: 400px;">
+        <div style="font-weight: 700; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
+            AREAL (M²)
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="areal-min" style="font-size: 11px; color: var(--text-secondary); min-width: 40px;">0</span>
+            <div style="flex: 1; position: relative;">
+                <input type="range" id="areal-slider-min" style="width: 100%; position: absolute; height: 4px; background: transparent; -webkit-appearance: none;">
+                <input type="range" id="areal-slider-max" style="width: 100%; position: absolute; height: 4px; background: transparent; -webkit-appearance: none;">
+                <div style="height: 4px; background: var(--bg-panel-3); border-radius: 2px; position: relative; margin: 8px 0;">
+                    <div id="areal-range-fill" style="position: absolute; height: 100%; background: var(--accent); border-radius: 2px;"></div>
+                </div>
+            </div>
+            <span id="areal-max" style="font-size: 11px; color: var(--text-secondary); min-width: 40px; text-align: right;">200</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; font-weight: 600;">
+            <span><span style="color:var(--text-muted); font-size:10px;">Fra: </span><span id="areal-value-min" style="color:var(--accent);">0</span> m²</span>
+            <span><span style="color:var(--text-muted); font-size:10px;">Til: </span><span id="areal-value-max" style="color:var(--accent);">200</span> m²</span>
+        </div>
+    </div>
     </div>
     
     <!-- Thumbnails -->
@@ -1292,6 +1312,8 @@ def generate_html(leje_data, ejer_data, output_path):
             aarMax: null,
             datoMin: null,
             datoMax: null,
+            arealMin: null,
+            arealMax: null,
             type: [],
             excluded: [],  // Array af bolig-ID'er der er ekskluderet
             drawLayer: null  // Leaflet layer objekt fra tegnet område
@@ -1916,9 +1938,33 @@ def generate_html(leje_data, ejer_data, output_path):
                 document.getElementById('dato-slider-container').style.display = 'none';
             }
 
+            // Areal slider - vis altid
+            var arealer = data.boliger.map(b => b.areal).filter(a => a && a > 0);
+            if (arealer.length > 0) {
+                var minAreal = Math.min(...arealer);
+                var maxAreal = Math.max(...arealer);
+                selectedFilters.arealMin = selectedFilters.arealMin !== null ? selectedFilters.arealMin : minAreal;
+                selectedFilters.arealMax = selectedFilters.arealMax !== null ? selectedFilters.arealMax : maxAreal;
+
+                document.getElementById('areal-slider-container').style.display = 'block';
+                document.getElementById('areal-min').textContent = minAreal;
+                document.getElementById('areal-max').textContent = maxAreal;
+                document.getElementById('areal-slider-min').min = minAreal;
+                document.getElementById('areal-slider-min').max = maxAreal;
+                document.getElementById('areal-slider-min').value = selectedFilters.arealMin;
+                document.getElementById('areal-slider-max').min = minAreal;
+                document.getElementById('areal-slider-max').max = maxAreal;
+                document.getElementById('areal-slider-max').value = selectedFilters.arealMax;
+                document.getElementById('areal-value-min').textContent = selectedFilters.arealMin;
+                document.getElementById('areal-value-max').textContent = selectedFilters.arealMax;
+            } else {
+                document.getElementById('areal-slider-container').style.display = 'none';
+            }
+
             // Vis/skjul wrapper
             var anySlider = document.getElementById('year-slider-container').style.display === 'block' ||
-                            document.getElementById('dato-slider-container').style.display === 'block';
+                            document.getElementById('dato-slider-container').style.display === 'block' ||
+                            document.getElementById('areal-slider-container').style.display === 'block';
             document.getElementById('sliders-wrapper').style.display = anySlider ? 'flex' : 'none';
         }
 
@@ -2014,6 +2060,8 @@ def generate_html(leje_data, ejer_data, output_path):
                 var aarMatch = bolig.opfoerelsesaar === null ||
                               (selectedFilters.aarMin === null || bolig.opfoerelsesaar >= selectedFilters.aarMin) &&
                               (selectedFilters.aarMax === null || bolig.opfoerelsesaar <= selectedFilters.aarMax);
+                var arealMatch = (selectedFilters.arealMin === null || bolig.areal >= selectedFilters.arealMin) &&
+                                (selectedFilters.arealMax === null || bolig.areal <= selectedFilters.arealMax);
                 var typeValue = currentMode === 'leje' ? bolig.boligtype : bolig.anvendelse;
                 var typeMatch = selectedFilters.type.length === 0 || selectedFilters.type.includes(typeValue);
                 var datoMatch = bolig.dato_ts === null || bolig.dato_ts === undefined ||
@@ -2034,7 +2082,7 @@ def generate_html(leje_data, ejer_data, output_path):
                     }
                 }
                 
-                return notExcluded && varelserMatch && byMatch && aarMatch && typeMatch && datoMatch && areaMatch;
+                return notExcluded && varelserMatch && byMatch && aarMatch && arealMatch && typeMatch && datoMatch && areaMatch;
             });
         }
 
@@ -2617,6 +2665,39 @@ def generate_html(leje_data, ejer_data, output_path):
             updateDisplay();
         }
         
+        function updateArealSlider() {
+            var minVal = parseInt(document.getElementById('areal-slider-min').value);
+            var maxVal = parseInt(document.getElementById('areal-slider-max').value);
+            
+            // Ensure min is always less than max
+            if (minVal > maxVal) {
+                var tmp = minVal;
+                minVal = maxVal;
+                maxVal = tmp;
+                document.getElementById('areal-slider-min').value = minVal;
+                document.getElementById('areal-slider-max').value = maxVal;
+            }
+            
+            selectedFilters.arealMin = minVal;
+            selectedFilters.arealMax = maxVal;
+            
+            document.getElementById('areal-value-min').textContent = minVal;
+            document.getElementById('areal-value-max').textContent = maxVal;
+            
+            // Update visual fill
+            var minAreal = parseInt(document.getElementById('areal-slider-min').min);
+            var maxAreal = parseInt(document.getElementById('areal-slider-min').max);
+            var range = maxAreal - minAreal;
+            var leftPercent = ((minVal - minAreal) / range) * 100;
+            var rightPercent = ((maxAreal - maxVal) / range) * 100;
+            
+            var fill = document.getElementById('areal-range-fill');
+            fill.style.left = leftPercent + '%';
+            fill.style.right = rightPercent + '%';
+            
+            updateDisplay();
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('year-slider-min').addEventListener('input', updateYearSlider);
             document.getElementById('year-slider-max').addEventListener('input', updateYearSlider);
@@ -2637,6 +2718,9 @@ def generate_html(leje_data, ejer_data, output_path):
                 document.getElementById('dato-value-max').textContent = d.toLocaleDateString('da-DK', { month: 'short', year: 'numeric' });
                 updateDisplay();
             });
+            
+            document.getElementById('areal-slider-min').addEventListener('input', updateArealSlider);
+            document.getElementById('areal-slider-max').addEventListener('input', updateArealSlider);
         });
         
         // Initial setup
