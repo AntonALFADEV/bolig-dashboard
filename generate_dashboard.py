@@ -840,6 +840,28 @@ def generate_html(leje_data, ejer_data, output_path):
         #filter-panel { background: var(--bg-panel) !important; border-right: 1px solid var(--border) !important; }
 
         /* ── Turnkey panel ───────────────────────────── */
+        #slider-toggle {
+            position: fixed;
+            bottom: 225px;
+            left: 18px;
+            z-index: 1001;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-hi);
+            color: var(--text-secondary);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            transition: all 0.15s ease;
+        }
+        #slider-toggle:hover { background: var(--bg-panel-2); color: var(--text-primary); }
+        #slider-toggle.open { background: var(--accent); color: white; border-color: var(--accent); }
+
         #warning-toggle {
             position: fixed;
             bottom: 185px;
@@ -1061,6 +1083,12 @@ def generate_html(leje_data, ejer_data, output_path):
         }
         #year-slider-min::-webkit-slider-thumb { pointer-events: all; z-index: 4; }
         #year-slider-max::-webkit-slider-thumb { pointer-events: all; z-index: 5; }
+        
+        #areal-slider-min, #areal-slider-max {
+            pointer-events: none; -webkit-appearance: none; height: 3px; background: transparent;
+        }
+        #areal-slider-min::-webkit-slider-thumb { pointer-events: all; z-index: 4; }
+        #areal-slider-max::-webkit-slider-thumb { pointer-events: all; z-index: 5; }
 
         /* ── Thumbnails ──────────────────────────────── */
         .thumbnails {
@@ -1129,6 +1157,9 @@ def generate_html(leje_data, ejer_data, output_path):
             <button class="mode-btn" onclick="clearDrawing()" title="Slet tegning" style="color:var(--danger);">🗑️</button>
         </div>
     </div>
+
+    <!-- Slider toggle knap -->
+    <button id="slider-toggle" onclick="toggleSliders()">📊 Sliders</button>
 
     <!-- Advarsel knap (vises kun hvis der er outliers) -->
     <button id="warning-toggle" style="display:none;" onclick="highlightOutliers()">⚠️ Advarsel</button>
@@ -1223,8 +1254,8 @@ def generate_html(leje_data, ejer_data, output_path):
         <div style="display: flex; align-items: center; gap: 10px;">
             <span id="areal-min" style="font-size: 11px; color: var(--text-secondary); min-width: 40px;">0</span>
             <div style="flex: 1; position: relative;">
-                <input type="range" id="areal-slider-min" style="width: 100%; position: absolute; height: 4px; background: transparent; -webkit-appearance: none;">
-                <input type="range" id="areal-slider-max" style="width: 100%; position: absolute; height: 4px; background: transparent; -webkit-appearance: none;">
+                <input type="range" id="areal-slider-min" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
+                <input type="range" id="areal-slider-max" style="width: 100%; position: absolute; pointer-events: none; height: 4px; background: transparent; -webkit-appearance: none;">
                 <div style="height: 4px; background: var(--bg-panel-3); border-radius: 2px; position: relative; margin: 8px 0;">
                     <div id="areal-range-fill" style="position: absolute; height: 100%; background: var(--accent); border-radius: 2px;"></div>
                 </div>
@@ -1698,6 +1729,14 @@ def generate_html(leje_data, ejer_data, output_path):
             panel.style.display = isOpen ? 'none' : 'flex';
             btn.classList.toggle('open', !isOpen);
         }
+        
+        function toggleSliders() {
+            var wrapper = document.getElementById('sliders-wrapper');
+            var btn = document.getElementById('slider-toggle');
+            var isOpen = wrapper.style.display === 'flex';
+            wrapper.style.display = isOpen ? 'none' : 'flex';
+            btn.classList.toggle('open', !isOpen);
+        }
 
         function updateTurnkey() {
             if (currentMode !== 'leje') return;
@@ -1961,11 +2000,8 @@ def generate_html(leje_data, ejer_data, output_path):
                 document.getElementById('areal-slider-container').style.display = 'none';
             }
 
-            // Vis/skjul wrapper
-            var anySlider = document.getElementById('year-slider-container').style.display === 'block' ||
-                            document.getElementById('dato-slider-container').style.display === 'block' ||
-                            document.getElementById('areal-slider-container').style.display === 'block';
-            document.getElementById('sliders-wrapper').style.display = anySlider ? 'flex' : 'none';
+            // Sliders er nu skjult som default - kun vist når brugeren klikker "Sliders" knappen
+            // document.getElementById('sliders-wrapper').style.display = anySlider ? 'flex' : 'none';
         }
 
         function tsToLabel(ts) {
