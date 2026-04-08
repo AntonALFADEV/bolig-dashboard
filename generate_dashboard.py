@@ -1363,8 +1363,8 @@ def generate_html(leje_data, ejer_data, output_path):
             roomNumbers.forEach(function(rooms) {
                 var subset = filtered.filter(b => b.varelser === rooms);
                 var trace = {
-                    x: subset.map(b => mode === 'leje' ? b.leje_m2 : b.pris_m2),
-                    y: subset.map(b => b.areal),
+                    x: subset.map(b => b.areal),
+                    y: subset.map(b => mode === 'leje' ? b.leje_m2 : b.pris_m2),
                     mode: 'markers',
                     type: 'scatter',
                     name: rooms + ' værelser',
@@ -1393,8 +1393,8 @@ def generate_html(leje_data, ejer_data, output_path):
                         'Areal vs. Pris per m²  (n=' + filtered.length + ')',
                     font: { size: 16, color: '#1a1d23' }
                 },
-                xaxis: { title: mode === 'leje' ? 'Leje per m² (kr./m²)' : 'Pris per m² (kr./m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
-                yaxis: { title: 'Areal (m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
+                xaxis: { title: 'Areal (m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
+                yaxis: { title: mode === 'leje' ? 'Leje per m² (kr./m²)' : 'Pris per m² (kr./m²)', gridcolor: '#e5e7eb', zerolinecolor: '#d1d5db' },
                 hovermode: 'closest',
                 showlegend: true,
                 legend: { x: 1, y: 1, xanchor: 'right', bgcolor: 'rgba(240,242,245,0.9)', bordercolor: '#d1d5db', borderwidth: 1 }
@@ -1659,15 +1659,15 @@ def generate_html(leje_data, ejer_data, output_path):
             rooms.forEach(function(r) {
                 var sub = filtered.filter(b=>b.varelser===r);
                 traces.push({
-                    x: sub.map(b=>mode==='leje'?b.leje_m2:b.pris_m2),
-                    y: sub.map(b=>b.areal),
+                    x: sub.map(b=>b.areal),
+                    y: sub.map(b=>mode==='leje'?b.leje_m2:b.pris_m2),
                     mode:'markers', type:'scatter', name:r+' vær.',
                     marker:{color:colors[r]||'#9ca3af', size:6, opacity:0.75}
                 });
             });
             var layout = Object.assign(getThumbLayout(mode==='leje'?'Areal vs. Leje/m²':'Areal vs. Pris/m²'), {
-                xaxis:{title:{text:mode==='leje'?'Leje/m²':'Pris/m²',font:{size:9}}, gridcolor:'#e5e7eb'},
-                yaxis:{title:{text:'Areal (m²)',font:{size:9}}, gridcolor:'#e5e7eb'}
+                xaxis:{title:{text:'Areal (m²)',font:{size:9}}, gridcolor:'#e5e7eb'},
+                yaxis:{title:{text:mode==='leje'?'Leje/m²':'Pris/m²',font:{size:9}}, gridcolor:'#e5e7eb'}
             });
             Plotly.newPlot('thumb-render-1', traces, layout, {staticPlot:true, responsive:false})
                 .then(function() {
