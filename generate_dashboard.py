@@ -96,17 +96,19 @@ def create_scatter_plot(df, mode='leje'):
     ax.set_facecolor('#ffffff')
 
     if mode == 'leje':
-        x_col = 'Leje/m2'
-        y_col = 'Areal'
+        x_col = 'Areal'
+        y_col = 'Leje/m2'
         room_col = 'Antal værelser'
         title = f'Areal vs. Leje per m²  (n={len(df)})'
-        x_label = 'Leje per m² (kr./m²)'
+        y_label = 'Leje per m² (kr./m²)'
+        x_label = 'Areal (m²)'
     else:
-        x_col = 'Pris pr. m2 (enhedsareal)'
-        y_col = 'Enhedsareal'
+        x_col = 'Enhedsareal'
+        y_col = 'Pris pr. m2 (enhedsareal)'
         room_col = 'Antal Værelser'
         title = f'Areal vs. Pris per m²  (n={len(df)})'
-        x_label = 'Pris per m² (kr./m²)'
+        y_label = 'Pris per m² (kr./m²)'
+        x_label = 'Areal (m²)'
 
     colors = {2: '#f59e0b', 3: '#ef4444', 4: '#3b82f6', 5: '#10b981', 6: '#8b5cf6', 7: '#06b6d4'}
 
@@ -133,7 +135,7 @@ def create_scatter_plot(df, mode='leje'):
                label=f'Trendlinje (R²={r2:.3f})')
 
     ax.set_xlabel(x_label, fontsize=11, color='#374151')
-    ax.set_ylabel('Areal (m²)', fontsize=11, color='#374151')
+    ax.set_ylabel(y_label, fontsize=11, color='#374151')
     ax.set_title(title, fontsize=13, fontweight='bold', color='#1a1d23', pad=12)
     ax.legend(loc='upper right', fontsize=9, framealpha=0.9, edgecolor='#e4e7ec')
     ax.grid(True, alpha=0.4, color='#d1d5db', linewidth=0.7)
