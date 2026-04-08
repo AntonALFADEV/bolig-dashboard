@@ -5,6 +5,8 @@ import os
 from io import BytesIO
 import tempfile
 
+# Version: 2.1 - SCATTER AXES FIXED - DEPLOYED 2026-04-08
+
 # Tilføj stien til vores generate_dashboard script
 sys.path.insert(0, os.path.dirname(__file__))
 
